@@ -1,10 +1,10 @@
 from setuptools import setup
 
 setup(
-    name='conda-ndenv',
+    name='conda_lockfile',
     version='0.1',
-    packages=['conda_ndenv'],
+    packages=['conda_lockfile'],
     entry_points={
-        'console_scripts': ['conda_ndenv = conda_ndenv.cli:main',
+        'console_scripts': ['conda_lockfile = conda_lockfile.cli:main'],
     },
 )
