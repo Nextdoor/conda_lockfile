@@ -5,7 +5,6 @@ setup(
     version='0.1',
     packages=['conda_lockfile'],
     install_requires=[
-        'docker-py',
         'PyYAML',
     ],
     entry_points={
