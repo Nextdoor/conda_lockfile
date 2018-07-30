@@ -1,6 +1,7 @@
 import argparse
 import hashlib
 import json
+import os
 import pathlib
 import shutil
 import subprocess
@@ -10,6 +11,8 @@ import docker
 import yaml
 
 ENVHASH_SIGIL = '# ENVHASH:'
+
+CONDA = os.environ['CONDA_EXE']
 
 
 def compute_env_hash(f):
@@ -40,94 +43,81 @@ def find_file(name, starting_dir=pathlib.Path('.')):
 
 
 def get_prefix(name):
-    out = subprocess.check_outputx(['conda', 'info', '--json'])
+    out = subprocess.check_output([CONDA, 'info', '--json'])
     out = json.loads(out)
     prefix = out['envs_dirs'][0]
     prefix = pathlib.Path(prefix)
     return prefix/name
 
 
-def add_create(subparsers):
-    parser = subparsers.add_parser('create')
-    parser.add_argument('--lockfile', default=pathlib.Path('env.lock.yml'), type=find_file)
-    return handle_create
-
-
-def handle_create(parser):
-    if parser.name is None:
-        data = yaml.load(parser.lockfile)
+def handle_create(args):
+    if args.name is None:
+        data = yaml.load(args.lockfile)
         name = data['name']
     subprocess.check_call([
-        'conda', 'env', 'create',
+        CONDA, 'env', 'create',
         '--force',
         '-q',
         '--json',
         '--name', name,
-        '-f', parser.lockfile,
+        '-f', args.lockfile,
     ])
 
     prefix = get_prefix(name)
-    shutil.copyfile(parser.lockfile, prefix/'env.lock.yml')
+    shutil.copyfile(args.lockfile, prefix/'env.lock.yml')
 
 
-def add_check(subparsers):
-    parser = subparsers.add_parser('check')
-    parser.add_argument('--envfile', default=pathlib.Path('env.yml'), type=find_file)
-    parser.add_argument('--env', default=None, type=pathlib.Path)
-    return handle_check
-
-
-def handle_check(parser):
-    with open(parser.envfile, 'rb') as f:
+def handle_check(args):
+    with open(args.envfile, 'rb') as f:
         expected_hash = compute_env_hash(f)
         f.seek(0)
+        env_name = yaml.load(f)['name']
 
-    env_name = yaml.load(parser.envfile)['name']
     prefix = get_prefix(env_name)
 
     with open(prefix/'env.lock.yml') as f:
         found_hash = read_env_hash(f)
 
     if expected_hash != found_hash:
-        raise Exception('Hash does not match')
+        raise Exception(f'Hash does not match: {expected_hash}, {found_hash}')
 
 
-def add_freeze(subparsers):
-    parser = subparsers.add_parser('freeze')
-    parser.add_argument('--envfile', default=pathlib.Path('env.yml'), type=find_file)
-    parser.add_argument('--name', type=str)
-    parser.add_argument('--lockfile', default=pathlib.Path('env.yml.lock'), type=find_file)
-    return handle_freeze
-
-
-def handle_freeze(parser):
+def handle_freeze(args):
     client = docker.from_env()
     client.image.create(path='~/src/nextdoor.com/conda_lockfile/Dockerfile', tag='lock_file_maker')
 
-    with open(parser.envfile, 'rb') as f:
+    with open(args.envfile, 'rb') as f:
         env_hash = compute_env_hash(f)
 
     with tempfile.TemporaryDirectory() as tmp_dir:
         tmp_dir = pathlib.Path(tmp_dir)
-        shutil.copyfile(parser.envfile, tmp_dir/'env.yml')
+        shutil.copyfile(args.envfile, tmp_dir/'env.yml')
         with open(tmp_dir/'env_name', 'w') as f:
-            f.write(parser.name)
+            f.write(args.name)
         client.containers.run('lock_file_maker')
-        with open(parser.lockfile, 'w') as lockfile:
+        with open(args.lockfile, 'w') as lockfile:
             lockfile.write(ENVHASH_SIGIL + env_hash + '\n')
-        shutil.copyfile(tmp_dir/'env.lock.yml', parser.lockfile)
+        shutil.copyfile(tmp_dir/'env.lock.yml', args.lockfile)
 
 
 def main():
     parser = argparse.ArgumentParser()
-
     subparsers = parser.add_subparsers()
-    handlers = {
-        'create': add_create(subparsers),
-        'check': add_check(subparsers),
-        'freeze': add_freeze(subparsers),
-    }
 
-    parser.parse_args()
-    handler = handlers[parser.subparser_name]
-    return handler(parser)
+    create = subparsers.add_parser('create')
+    create.add_argument('--lockfile', default=pathlib.Path('env.lock.yml'), type=pathlib.Path)
+    create.set_defaults(handler=handle_create)
+
+    check = subparsers.add_parser('check')
+    check.add_argument('--envfile', default=pathlib.Path('env.yml'), type=pathlib.Path)
+    check.add_argument('--env', default=None, type=pathlib.Path)
+    check.set_defaults(handler=handle_check)
+
+    freeze = subparsers.add_parser('freeze')
+    freeze.add_argument('--envfile', default=pathlib.Path('env.yml'), type=pathlib.Path)
+    freeze.add_argument('--name', type=str)
+    freeze.add_argument('--lockfile', default=pathlib.Path('env.yml.lock'), type=pathlib.Path)
+    freeze.set_defaults(handler=handle_freeze)
+
+    args = parser.parse_args()
+    return args.handler(args)
