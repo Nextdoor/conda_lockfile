@@ -16,7 +16,7 @@ CONDA = os.environ['CONDA_EXE']
 
 
 def compute_env_hash_and_name(f):
-    """Compute the hash of an env.yml file & extract the env's name.
+    """Compute the hash of an deps.yml file & extract the env's name.
 
     :rtype str env_hash: Hash of the environment
     :rtype str name: Name of the environment
@@ -30,7 +30,7 @@ def compute_env_hash_and_name(f):
 def read_env_hash(f):
     """Read the hash of an environment.
 
-    :param file f: File object for the environment lockfile (ie env.yml.lock)
+    :param file f: File object for the environment lockfile (ie deps.yml.lock)
     :rtype str: the hash of the environment
     """
     for line in f:
@@ -87,7 +87,7 @@ def handle_create(args):
     ])
 
     prefix = get_prefix(name)
-    shutil.copyfile(args.lockfile, prefix/'env.lock.yml')
+    shutil.copyfile(args.lockfile, prefix/'deps.yml.lock')
 
 
 def handle_check(args):
@@ -96,12 +96,12 @@ def handle_check(args):
     This computes a hash of the env_file & compares that with a hash embedded in
     the constructed environment.
     """
-    with open(args.envfile, 'rb') as f:
+    with open(args.depsfile, 'rb') as f:
         expected_hash, env_name = compute_env_hash_and_name(f)
 
     prefix = get_prefix(env_name)
 
-    with open(prefix/'env.lock.yml') as f:
+    with open(prefix/'deps.yml.lock') as f:
         found_hash = read_env_hash(f)
 
     if expected_hash != found_hash:
@@ -109,7 +109,7 @@ def handle_check(args):
 
 
 def handle_freeze(args):
-    """Freeze the requirements from an env file into a detailed lockfile.
+    """Freeze the requirements from a deps file into a detailed lockfile.
 
     The lockfile will explicitly list all depdencenies needed to exactly
     re-create the environment.
@@ -122,7 +122,7 @@ def handle_freeze(args):
     pkg_root = pathlib.Path(os.path.dirname(sys.modules['conda_lockfile'].__file__))
     subprocess.check_call(['docker', 'build', pkg_root/'builder', '-t', image_name])
 
-    with open(args.envfile, 'rb') as f:
+    with open(args.depsfile, 'rb') as f:
         env_hash, env_name = compute_env_hash_and_name(f)
 
     TMP_DIR = '/tmp/conda_lockfile'
@@ -131,15 +131,15 @@ def handle_freeze(args):
     except FileExistsError:
         pass
 
-    # We use the filesystem to interact with our env-file builder container.
+    # We use the filesystem to interact with our deps-file builder container.
     # This is a little janky, but less painful than dealing with stdout from
     # the container directly. The docker-daemon must have permission to share
     # this directory with containers.
     # Make a temporary directory to work in.
     with tempfile.TemporaryDirectory(dir=TMP_DIR) as tmp_dir:
         tmp_dir = pathlib.Path(tmp_dir)
-        # Copy the "source" env.yml file.
-        shutil.copyfile(args.envfile, tmp_dir/'env.yml')
+        # Copy the "source" deps.yml file.
+        shutil.copyfile(args.depsfile, tmp_dir/'deps.yml')
         # Write a file with the environment's name so that the lockfile builder
         # knows what to name the environment.
         with open(tmp_dir/'env_name', 'w') as f:
@@ -149,8 +149,8 @@ def handle_freeze(args):
             '-v', f'{tmp_dir}:/app/artifacts',
             '-t', image_name,
         ])
-        with open(args.lockfile, 'w') as lockfile, open(tmp_dir/'env.lock.yml') as tmp_env_file:
-            # Embed a hash of the source env file into the lockfile.
+        with open(args.lockfile, 'w') as lockfile, open(tmp_dir/'deps.yml.lock') as tmp_env_file:
+            # Embed a hash of the source deps file into the lockfile.
             lockfile.write(ENVHASH_SIGIL + env_hash + '\n')
             # Now write the contents of the lockfile.
             lockfile.write(tmp_env_file.read())
@@ -161,18 +161,16 @@ def main():
     subparsers = parser.add_subparsers()
 
     create = subparsers.add_parser('create')
-    create.add_argument('--lockfile', default=pathlib.Path('env.yml.lock'), type=pathlib.Path)
+    create.add_argument('--lockfile', default=pathlib.Path('deps.yml.lock'), type=pathlib.Path)
     create.set_defaults(handler=handle_create)
 
     check = subparsers.add_parser('check')
-    check.add_argument('--envfile', default=pathlib.Path('env.yml'), type=pathlib.Path)
-    check.add_argument('--env', default=None, type=pathlib.Path)
+    check.add_argument('--depsfile', default=pathlib.Path('deps.yml'), type=pathlib.Path)
     check.set_defaults(handler=handle_check)
 
     freeze = subparsers.add_parser('freeze')
-    freeze.add_argument('--envfile', default=pathlib.Path('env.yml'), type=pathlib.Path)
-    freeze.add_argument('--name', type=str)
-    freeze.add_argument('--lockfile', default=pathlib.Path('env.yml.lock'), type=pathlib.Path)
+    freeze.add_argument('--depsfile', default=pathlib.Path('deps.yml'), type=pathlib.Path)
+    freeze.add_argument('--lockfile', default=pathlib.Path('deps.yml.lock'), type=pathlib.Path)
     freeze.set_defaults(handler=handle_freeze)
 
     args = parser.parse_args()

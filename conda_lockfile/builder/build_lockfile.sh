@@ -13,4 +13,4 @@ ENV_NAME=$(cat env_name)
 $CONDA_ROOT/bin/conda env create -f env.yml -n $ENV_NAME env.yml
 # The prefix line includes an absolute path from inside this container.
 # Remove it to avoid confusion.
-$CONDA_ROOT/bin/conda env export -n $ENV_NAME | grep -v "^prefix:" > env.lock.yml
+$CONDA_ROOT/bin/conda env export -n $ENV_NAME | grep -v "^prefix:" > deps.yml.lock
