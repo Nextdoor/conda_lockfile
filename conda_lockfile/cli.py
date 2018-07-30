@@ -5,9 +5,9 @@ import os
 import pathlib
 import shutil
 import subprocess
+import sys
 import tempfile
 
-import docker
 import yaml
 
 ENVHASH_SIGIL = '# ENVHASH:'
@@ -51,9 +51,9 @@ def get_prefix(name):
 
 
 def handle_create(args):
-    if args.name is None:
-        data = yaml.load(args.lockfile)
-        name = data['name']
+    with open(args.lockfile) as f:
+        data = yaml.load(f)
+    name = data['name']
     subprocess.check_call([
         CONDA, 'env', 'create',
         '--force',
@@ -109,9 +109,9 @@ def handle_freeze(args):
             '-v', f'{tmp_dir}:/app/artifacts',
             '-t', image_name,
         ])
-        with open(args.lockfile, 'w') as lockfile:
+        with open(args.lockfile, 'w') as lockfile, open(tmp_dir/'env.lock.yml') as tmp_env_file:
             lockfile.write(ENVHASH_SIGIL + env_hash + '\n')
-        shutil.copyfile(tmp_dir/'env.lock.yml', args.lockfile)
+            lockfile.write(tmp_env_file.read())
 
 
 def main():
@@ -119,7 +119,7 @@ def main():
     subparsers = parser.add_subparsers()
 
     create = subparsers.add_parser('create')
-    create.add_argument('--lockfile', default=pathlib.Path('env.lock.yml'), type=pathlib.Path)
+    create.add_argument('--lockfile', default=pathlib.Path('env.yml.lock'), type=pathlib.Path)
     create.set_defaults(handler=handle_create)
 
     check = subparsers.add_parser('check')
