@@ -83,18 +83,32 @@ def handle_check(args):
 
 
 def handle_freeze(args):
-    client = docker.from_env()
-    client.image.create(path='~/src/nextdoor.com/conda_lockfile/Dockerfile', tag='lock_file_maker')
+    image_name = 'lock_file_maker'
+    pkg_root = pathlib.Path(os.path.dirname(sys.modules['conda_lockfile'].__file__))
+    dockerfile_path = pkg_root/'builder'
+    subprocess.check_call(['docker', 'build', dockerfile_path, '-t', image_name])
 
     with open(args.envfile, 'rb') as f:
         env_hash = compute_env_hash(f)
+        f.seek(0)
+        env_name = yaml.load(f)['name']
 
-    with tempfile.TemporaryDirectory() as tmp_dir:
+    TMP_DIR = '/tmp/conda_lockfile'
+    try:
+        os.mkdir(TMP_DIR)
+    except FileExistsError:
+        pass
+
+    with tempfile.TemporaryDirectory(dir=TMP_DIR) as tmp_dir:
         tmp_dir = pathlib.Path(tmp_dir)
         shutil.copyfile(args.envfile, tmp_dir/'env.yml')
         with open(tmp_dir/'env_name', 'w') as f:
-            f.write(args.name)
-        client.containers.run('lock_file_maker')
+            f.write(env_name)
+        subprocess.check_call([
+            'docker', 'run',
+            '-v', f'{tmp_dir}:/app/artifacts',
+            '-t', image_name,
+        ])
         with open(args.lockfile, 'w') as lockfile:
             lockfile.write(ENVHASH_SIGIL + env_hash + '\n')
         shutil.copyfile(tmp_dir/'env.lock.yml', args.lockfile)
