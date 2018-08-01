@@ -12,12 +12,21 @@ import yaml
 
 ENVHASH_SIGIL = '# ENVHASH:'
 
+# not sure if this works in older condas
 CONDA = os.environ['CONDA_EXE']
+
+SUCCESS_CODE = 0
+FAILURE_CODE = 1
+
+
+class MissingEnvHash(Exception):
+    pass
 
 
 def compute_env_hash_and_name(f):
     """Compute the hash of an deps.yml file & extract the env's name.
 
+    :param bytes-mode-file f: deps.yml file object
     :rtype str env_hash: Hash of the environment
     :rtype str name: Name of the environment
     """
@@ -34,12 +43,12 @@ def read_env_hash(f):
     :rtype str: the hash of the environment
     """
     for line in f:
-        if line.startswith(ENVHASH_SIGIL):
+        if line.strip().startswith(ENVHASH_SIGIL):
             return line.split(ENVHASH_SIGIL)[1].strip()
-    raise Exception('Did not find hash')
+    raise MissingEnvHash('Did not find hash')
 
 
-def find_file(name, starting_dir=pathlib.Path('.')):
+def _find_file(name, starting_dir=pathlib.Path('.')):
     path = pathlib.Path(name)
     if path.exists():
         return path.resolve()
@@ -89,6 +98,8 @@ def handle_create(args):
     prefix = get_prefix(name)
     shutil.copyfile(args.lockfile, prefix/'deps.yml.lock')
 
+    return SUCCESS_CODE
+
 
 def handle_check(args):
     """Check that the installed environment's hash matches the specified requirements.
@@ -96,16 +107,27 @@ def handle_check(args):
     This computes a hash of the env_file & compares that with a hash embedded in
     the constructed environment.
     """
-    with open(args.depsfile, 'rb') as f:
-        expected_hash, env_name = compute_env_hash_and_name(f)
+    depsfile_path = args.depsfile
+    with open(depsfile_path, 'rb') as depsfile:
+        expected_hash, env_name = compute_env_hash_and_name(depsfile)
 
     prefix = get_prefix(env_name)
 
-    with open(prefix/'deps.yml.lock') as f:
-        found_hash = read_env_hash(f)
+    lockfile_path = prefix/'deps.yml.lock'
+    with open(lockfile_path) as lockfile:
+        try:
+            found_hash = read_env_hash(lockfile)
+        except MissingEnvHash:
+            print(f'Unable to find hash in {lockfile_path}')
+            return FAILURE_CODE
 
     if expected_hash != found_hash:
-        raise Exception(f'Hash does not match: {expected_hash}, {found_hash}')
+        print(f'deps file ({depsfile_path}) and environment ({lockfile_path}) do not match:')
+        print(f'expected: {expected_hash}')
+        print(f'found:    {found_hash}')
+        return FAILURE_CODE
+
+    return SUCCESS_CODE
 
 
 def handle_freeze(args):
@@ -120,6 +142,7 @@ def handle_freeze(args):
     # work on mac.
     image_name = 'lock_file_maker'
     pkg_root = pathlib.Path(os.path.dirname(sys.modules['conda_lockfile'].__file__))
+    print('Creating docker builder image')
     subprocess.check_call(['docker', 'build', pkg_root/'builder', '-t', image_name])
 
     with open(args.depsfile, 'rb') as f:
@@ -144,16 +167,20 @@ def handle_freeze(args):
         # knows what to name the environment.
         with open(tmp_dir/'env_name', 'w') as f:
             f.write(env_name)
+        print('Building environment')
         subprocess.check_call([
             'docker', 'run',
             '-v', f'{tmp_dir}:/app/artifacts',
             '-t', image_name,
         ])
+        print('Writing lockfile')
         with open(args.lockfile, 'w') as lockfile, open(tmp_dir/'deps.yml.lock') as tmp_env_file:
             # Embed a hash of the source deps file into the lockfile.
             lockfile.write(ENVHASH_SIGIL + env_hash + '\n')
             # Now write the contents of the lockfile.
             lockfile.write(tmp_env_file.read())
+
+    return SUCCESS_CODE
 
 
 def main():
@@ -174,4 +201,6 @@ def main():
     freeze.set_defaults(handler=handle_freeze)
 
     args = parser.parse_args()
-    return args.handler(args)
+    success = args.handler(args)
+    if not success:
+        sys.exit(1)
