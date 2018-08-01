@@ -5,7 +5,7 @@ setup(
     version='0.1',
     packages=['conda_lockfile'],
     install_requires=['PyYAML'],
-    test_requires=['pytest'],
+    tests_requires=['pytest'],
     entry_points={'console_scripts': ['conda-lockfile = conda_lockfile.cli:main']},
     include_package_data=True,
     package_dir={'mypkg': 'conda_lockfile'},
