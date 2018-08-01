@@ -12,11 +12,18 @@ import yaml
 
 ENVHASH_SIGIL = '# ENVHASH:'
 
-# not sure if this works in older condas
-CONDA = os.environ['CONDA_EXE']
 
 SUCCESS_CODE = 0
 FAILURE_CODE = 1
+
+
+def find_conda():
+    conda = os.environ.get('CONDA_EXE')
+    if conda:
+        return conda
+    conda = os.environ.get('_CONDA_EXE')
+    if conda:
+        return conda
 
 
 class MissingEnvHash(Exception):
@@ -71,7 +78,7 @@ def get_prefix(name):
     :param str name: The name of the environment.
     :rtype: pathlib.Path
     """
-    out = subprocess.check_output([CONDA, 'info', '--json'])
+    out = subprocess.check_output([find_conda(), 'info', '--json'])
     out = json.loads(out)
     prefix = out['envs_dirs'][0]
     prefix = pathlib.Path(prefix)
@@ -87,7 +94,7 @@ def handle_create(args):
         data = yaml.load(f)
     name = data['name']
     subprocess.check_call([
-        CONDA, 'env', 'create',
+        find_conda(), 'env', 'create',
         '--force',
         '-q',
         '--json',
