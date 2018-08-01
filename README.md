@@ -1,3 +1,5 @@
+[![CircleCI](https://circleci.com/gh/Nextdoor/conda_lockfile.svg?style=svg)](https://circleci.com/gh/Nextdoor/conda_lockfile)
+
 conda_lockfile
 ==============
 
