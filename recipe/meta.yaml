@@ -1,0 +1,32 @@
+package:
+  name: conda_lockfile
+  version: "0.1"
+#   sha256: a4f59ad2080721db0cea6c0777f84e77db0fbb564a4a29220dab52f2907c36a2
+
+channels:
+- defaults
+
+build:
+  number: 0
+
+source:
+  path: ../
+  # yes this doesn't match the version of mapnik
+#   url: https://github.com/Nextdoor/conda_lockfile/archive/0.1.zip
+
+requirements:
+  build:
+    - python
+    - setuptools
+
+  run:
+    - python
+    - pyyaml
+
+test:
+  requires:
+    - pytest
+  imports:
+    - conda_lockfile.cli
+  commands:
+    - pytest --pyargs conda_lockfile
