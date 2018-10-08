@@ -14,8 +14,17 @@ jobs:
       - run: source $HOME/miniconda/etc/profile.d/conda.sh
       - run: python setup.py test
 
+  mypy:
+    docker:
+      - image: circleci/python:3-jessie-node-browsers
+    steps:
+      - run: pip install mypy
+      - checkout
+      - run: mypy conda_lockfile
+
 workflows:
   version: 2
   run_ci:
     jobs:
       - unit_test
+      - mypy
