@@ -8,9 +8,9 @@ jobs:
       MINICONDA_VERSION: "Miniconda3-4.5.4-Linux-x86_64.sh"
 
     steps:
+      - checkout
       - run: wget https://repo.continuum.io/miniconda/$MINICONDA_VERSION
       - run: bash $MINICONDA_VERSION -b -f -p $HOME/miniconda
-      - checkout
       - run:
           name: Run tests
           command: |
@@ -32,9 +32,9 @@ jobs:
       MINICONDA_VERSION: "Miniconda3-4.5.4-Linux-x86_64.sh"
 
     steps:
+      - checkout
       - run: wget https://repo.continuum.io/miniconda/$MINICONDA_VERSION
       - run: bash $MINICONDA_VERSION -b -f -p $HOME/miniconda
-      - checkout
       - run:
           name: Build conda packages
           command: | 
