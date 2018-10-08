@@ -7,14 +7,18 @@ channels:
 
 build:
   number: 0
+  noarch: python
 
 source:
   path: ../
 
 requirements:
   build:
-    - python
+    - python {{ python }}
     - setuptools
+    - pytest
+    - pytest-runner
+    - pyyaml
 
   run:
     - python
