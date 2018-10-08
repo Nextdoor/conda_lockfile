@@ -11,8 +11,10 @@ jobs:
       - checkout
       - run: wget https://repo.continuum.io/miniconda/$MINICONDA_VERSION
       - run: bash $MINICONDA_VERSION -b -f -p $HOME/miniconda
-      - run: source $HOME/miniconda/etc/profile.d/conda.sh
-      - run: python setup.py test
+      - run:
+        commands: |
+          source $HOME/miniconda/etc/profile.d/conda.sh
+          python setup.py test
 
   mypy:
     docker:
@@ -32,9 +34,11 @@ jobs:
       - checkout
       - run: wget https://repo.continuum.io/miniconda/$MINICONDA_VERSION
       - run: bash $MINICONDA_VERSION -b -f -p $HOME/miniconda
-      - run: source $HOME/miniconda/etc/profile.d/conda.sh
-      - run: conda install -y conda-build
-      - run: conda build conda_lockfile
+      - run:
+        commands: | 
+          source $HOME/miniconda/etc/profile.d/conda.sh
+          conda install -y conda-build
+          conda build conda_lockfile
 
 
 workflows:
