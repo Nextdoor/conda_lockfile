@@ -7,6 +7,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+from typing import Tuple
 
 import yaml
 
@@ -17,7 +18,7 @@ SUCCESS_CODE = 0
 FAILURE_CODE = 1
 
 
-def find_conda():
+def find_conda() -> str:
     conda = os.environ.get('CONDA_EXE')
     if conda:
         return conda
@@ -25,12 +26,14 @@ def find_conda():
     if conda:
         return conda
 
+    raise Exception()
+
 
 class MissingEnvHash(Exception):
     pass
 
 
-def compute_env_hash_and_name(f):
+def compute_env_hash_and_name(f) -> Tuple[str, str]:
     """Compute the hash of an deps.yml file & extract the env's name.
 
     :param bytes-mode-file f: deps.yml file object
@@ -43,7 +46,7 @@ def compute_env_hash_and_name(f):
     return env_hash, env_name
 
 
-def read_env_hash(f):
+def read_env_hash(f) -> str:
     """Read the hash of an environment.
 
     :param file f: File object for the environment lockfile (ie deps.yml.lock)
@@ -55,7 +58,7 @@ def read_env_hash(f):
     raise MissingEnvHash('Did not find hash')
 
 
-def _find_file(name, starting_dir=pathlib.Path('.')):
+def _find_file(name: str, starting_dir=pathlib.Path('.')) -> pathlib.Path:
     path = pathlib.Path(name)
     if path.exists():
         return path.resolve()
@@ -72,7 +75,7 @@ def _find_file(name, starting_dir=pathlib.Path('.')):
     raise Exception(f'{name} not found')
 
 
-def get_prefix(name):
+def get_prefix(name: str) -> pathlib.Path:
     """Get the directory where an environment is installed.
 
     :param str name: The name of the environment.
@@ -85,7 +88,7 @@ def get_prefix(name):
     return prefix/name
 
 
-def handle_create(args):
+def handle_create(args) -> int:
     """Create an environment from a env_file.
 
     The environments created contain the metadata to describe their provenance.
@@ -108,7 +111,7 @@ def handle_create(args):
     return SUCCESS_CODE
 
 
-def handle_check(args):
+def handle_check(args) -> int:
     """Check that the installed environment's hash matches the specified requirements.
 
     This computes a hash of the env_file & compares that with a hash embedded in
@@ -137,7 +140,7 @@ def handle_check(args):
     return SUCCESS_CODE
 
 
-def handle_freeze(args):
+def handle_freeze(args) -> int:
     """Freeze the requirements from a deps file into a detailed lockfile.
 
     The lockfile will explicitly list all depdencenies needed to exactly
@@ -152,8 +155,8 @@ def handle_freeze(args):
     print('Creating docker builder image')
     subprocess.check_call(['docker', 'build', pkg_root/'builder', '-t', image_name])
 
-    with open(args.depsfile, 'rb') as f:
-        env_hash, env_name = compute_env_hash_and_name(f)
+    with open(args.depsfile, 'rb') as depsfile:
+        env_hash, env_name = compute_env_hash_and_name(depsfile)
 
     TMP_DIR = '/tmp/conda_lockfile'
     try:
@@ -166,14 +169,14 @@ def handle_freeze(args):
     # the container directly. The docker-daemon must have permission to share
     # this directory with containers.
     # Make a temporary directory to work in.
-    with tempfile.TemporaryDirectory(dir=TMP_DIR) as tmp_dir:
-        tmp_dir = pathlib.Path(tmp_dir)
+    with tempfile.TemporaryDirectory(dir=TMP_DIR) as td:
+        tmp_dir = pathlib.Path(td)
         # Copy the "source" deps.yml file.
         shutil.copyfile(args.depsfile, tmp_dir/'deps.yml')
         # Write a file with the environment's name so that the lockfile builder
         # knows what to name the environment.
-        with open(tmp_dir/'env_name', 'w') as f:
-            f.write(env_name)
+        with open(tmp_dir/'env_name', 'w') as env_name_file:
+            env_name_file.write(env_name)
         print('Building environment')
         subprocess.check_call([
             'docker', 'run',
