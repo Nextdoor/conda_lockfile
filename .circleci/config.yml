@@ -40,7 +40,7 @@ jobs:
           command: | 
             source $HOME/miniconda/etc/profile.d/conda.sh
             conda install -y conda-build
-            conda build conda_lockfile
+            conda build .
 
 
 workflows:
