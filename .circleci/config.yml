@@ -18,7 +18,7 @@ jobs:
     docker:
       - image: circleci/python:3-jessie-node-browsers
     steps:
-      - run: pip install mypy
+      - run: sudo pip install mypy
       - checkout
       - run: mypy conda_lockfile
 
