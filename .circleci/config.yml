@@ -13,7 +13,7 @@ jobs:
       - checkout
       - run:
           name: Run tests
-	  command: |
+          command: |
             source $HOME/miniconda/etc/profile.d/conda.sh
             python setup.py test
 
