@@ -12,8 +12,9 @@ jobs:
       - run: bash $MINICONDA_VERSION -b -f -p $HOME/miniconda
       - checkout
       - run:
+        name: Run tests
         command: |
-          source $HOME/miniconda/etc/profile.d/conda.sh
+          source $HOME/miniconda/etc/profile.d/conda.sh &&
           python setup.py test
 
   mypy:
@@ -35,9 +36,10 @@ jobs:
       - run: bash $MINICONDA_VERSION -b -f -p $HOME/miniconda
       - checkout
       - run:
+        name: Build conda packages
         command: | 
-          source $HOME/miniconda/etc/profile.d/conda.sh
-          conda install -y conda-build
+          source $HOME/miniconda/etc/profile.d/conda.sh &&
+          conda install -y conda-build &&
           conda build conda_lockfile
 
 
