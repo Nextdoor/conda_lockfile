@@ -1,7 +1,6 @@
 package:
   name: conda_lockfile
   version: "0.1"
-#   sha256: a4f59ad2080721db0cea6c0777f84e77db0fbb564a4a29220dab52f2907c36a2
 
 channels:
 - defaults
@@ -11,8 +10,6 @@ build:
 
 source:
   path: ../
-  # yes this doesn't match the version of mapnik
-#   url: https://github.com/Nextdoor/conda_lockfile/archive/0.1.zip
 
 requirements:
   build:
