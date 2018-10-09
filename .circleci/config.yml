@@ -32,7 +32,7 @@ jobs:
       - image: conda/miniconda3
 
     steps:
-      - run: conda install -y anaconda-client
+      - run: conda install -y anaconda-client conda-build
       - run: conda build . --output
 #       - run: conda build . --output | xargs anaconda -t $ANACONDA_ORG_TOKEN upload
 
