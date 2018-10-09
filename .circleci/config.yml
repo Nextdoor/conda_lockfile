@@ -24,7 +24,8 @@ jobs:
 
     steps:
       - checkout
-      - run: "set +x && conda install -y conda-build"
+      - run: conda install -y conda-build
+      - run: set +x && echo $HOME
       - run: conda build .
 
   push_anaconda_org:
@@ -45,12 +46,9 @@ workflows:
       - unit_test
       - mypy
       - conda_build
-
-#   release:
-#     jobs:
-#       - push_anaconda_org
-#           filters:
-#             tags:
-#               only: /release.*/
-#             branches:
-#               ignore: /.*/
+      - push_anaconda_org
+          filters:
+            tags:
+              only: /release.*/
+            branches:
+              ignore: /.*/
