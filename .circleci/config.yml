@@ -34,7 +34,7 @@ jobs:
     steps:
       - run: conda install -y anaconda-client conda-build
       - checkout
-      - @run: conda build . --output | xargs anaconda -t $ANACONDA_ORG_TOKEN upload
+      - run: conda build . --output | xargs anaconda -t $ANACONDA_ORG_TOKEN upload
 
 
 
