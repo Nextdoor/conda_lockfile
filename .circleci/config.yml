@@ -33,7 +33,7 @@ jobs:
     steps:
       - checkout
       - run: conda install -y anaconda-client conda-build
-#       - run: conda build . --output | xargs anaconda -t $ANACONDA_ORG_TOKEN upload
+      - run: conda build . --output | xargs anaconda -t $ANACONDA_ORG_TOKEN upload
 
 workflows:
   version: 2
