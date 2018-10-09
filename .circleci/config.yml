@@ -42,9 +42,9 @@ workflows:
       - unit_test
       - mypy
       - conda_build
-      - push_anaconda_org
-#           filters:
-#             tags:
-#               only: /release.*/
-#             branches:
-#               ignore: /.*/
+      - push_anaconda_org:
+          filters:
+            tags:
+              only: /release.*/
+            branches:
+              ignore: /.*/
