@@ -25,7 +25,7 @@ jobs:
     steps:
       - checkout
       - run: conda install -y conda-build
-      - run: set +x && echo $HOME
+      - run: echo $HOME
       - run: conda build .
 
   push_anaconda_org:
