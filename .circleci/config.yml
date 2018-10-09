@@ -7,7 +7,7 @@ jobs:
 
     steps:
       - checkout
-      - run: python -m pip install setuptools --upgrade
+      - run: conda install -y setuptools
       - run: python setup.py test
 
   mypy:
