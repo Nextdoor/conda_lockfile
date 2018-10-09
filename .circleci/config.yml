@@ -24,7 +24,7 @@ jobs:
 
     steps:
       - checkout
-      - run: conda install -y conda-build
+      - run: @conda install -y conda-build
       - run: conda build .
 
   push_anaconda_org:
@@ -34,8 +34,7 @@ jobs:
     steps:
       - run: conda install -y anaconda-client conda-build
       - checkout
-      - run: conda build . --output
-#       - run: conda build . --output | xargs anaconda -t $ANACONDA_ORG_TOKEN upload
+      - @run: conda build . --output | xargs anaconda -t $ANACONDA_ORG_TOKEN upload
 
 
 
@@ -46,7 +45,12 @@ workflows:
       - unit_test
       - mypy
       - conda_build
-      - push_anaconda_org
 
-#   release:
-#     jobs:
+  release:
+    jobs:
+      - push_anaconda_org
+          filters:
+            tags:
+              only: /release.*/
+            branches:
+              ignore: /.*/
