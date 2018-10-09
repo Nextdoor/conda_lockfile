@@ -33,8 +33,8 @@ jobs:
 
     steps:
       - run: conda install -y anaconda-client
-      - run: anaconda login --username $(CONDA_USER) --password $(CONDA_PASS)
-      - run: conda build . --output | xargs anaconda upload
+      - run: conda build . --output
+#       - run: conda build . --output | xargs anaconda -t $ANACONDA_ORG_TOKEN upload
 
 
 
@@ -45,3 +45,7 @@ workflows:
       - unit_test
       - mypy
       - conda_build
+      - push_anaconda_org
+
+#   release:
+#     jobs:
