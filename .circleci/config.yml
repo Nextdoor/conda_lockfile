@@ -25,7 +25,6 @@ jobs:
     steps:
       - checkout
       - run: conda install -y conda-build
-      - run: echo $HOME
       - run: conda build .
 
   push_anaconda_org:
@@ -46,9 +45,9 @@ workflows:
       - unit_test
       - mypy
       - conda_build
-#       - push_anaconda_org
-#           filters:
-#             tags:
-#               only: /release.*/
-#             branches:
-#               ignore: /.*/
+      - push_anaconda_org
+          filters:
+            tags:
+              only: /release.*/
+            branches:
+              ignore: /.*/
