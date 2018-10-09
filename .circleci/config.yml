@@ -46,11 +46,11 @@ workflows:
       - mypy
       - conda_build
 
-  release:
-    jobs:
-      - push_anaconda_org
-          filters:
-            tags:
-              only: /release.*/
-            branches:
-              ignore: /.*/
+#   release:
+#     jobs:
+#       - push_anaconda_org
+#           filters:
+#             tags:
+#               only: /release.*/
+#             branches:
+#               ignore: /.*/
