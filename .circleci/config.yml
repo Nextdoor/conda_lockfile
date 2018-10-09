@@ -30,10 +30,9 @@ jobs:
   push_anaconda_org:
     docker:
       - image: conda/miniconda3
-
     steps:
-      - run: conda install -y anaconda-client conda-build
       - checkout
+      - run: conda install -y anaconda-client conda-build
       - run: conda build . --output | xargs anaconda -t $ANACONDA_ORG_TOKEN upload
 
 
