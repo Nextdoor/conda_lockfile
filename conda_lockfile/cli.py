@@ -18,6 +18,25 @@ SUCCESS_CODE = 0
 FAILURE_CODE = 1
 
 
+def check_output(cmd) -> bytes:
+    print('running:', ' '.join(str(x) for x in cmd))
+    try:
+        return subprocess.check_output(cmd)
+    except subprocess.CalledProcessError as e:
+        print(e)
+        print('[cmd]\n', e.cmd)
+        print('')
+        print('[returncode]\n', e.returncode)
+        print('')
+        print('[output]\n', e.output.decode('utf-8'))
+        print('')
+        print('[stdout]\n', e.stdout.decode('utf-8') if e.stdout else None)
+        print('')
+        print('[stderr]\n', e.stderr.decode('utf-8') if e.stderr else None)
+        print('')
+        raise
+
+
 def find_conda() -> str:
     conda = os.environ.get('CONDA_EXE')
     if conda:
@@ -81,7 +100,7 @@ def get_prefix(name: str) -> pathlib.Path:
     :param str name: The name of the environment.
     :rtype: pathlib.Path
     """
-    out = subprocess.check_output([find_conda(), 'info', '--json'])
+    out = check_output([find_conda(), 'info', '--json'])
     out = json.loads(out)
     prefix = out['envs_dirs'][0]
     prefix = pathlib.Path(prefix)
@@ -96,7 +115,7 @@ def handle_create(args) -> int:
     with open(args.lockfile) as f:
         data = yaml.load(f)
     name = data['name']
-    subprocess.check_call([
+    check_output([
         find_conda(), 'env', 'create',
         '--force',
         '-q',
@@ -153,7 +172,7 @@ def handle_freeze(args) -> int:
     image_name = 'lock_file_maker'
     pkg_root = pathlib.Path(os.path.dirname(sys.modules['conda_lockfile'].__file__))
     print('Creating docker builder image')
-    subprocess.check_call(['docker', 'build', pkg_root/'builder', '-t', image_name])
+    check_output(['docker', 'build', pkg_root/'builder', '-t', image_name])
 
     with open(args.depsfile, 'rb') as depsfile:
         env_hash, env_name = compute_env_hash_and_name(depsfile)
@@ -178,7 +197,7 @@ def handle_freeze(args) -> int:
         with open(tmp_dir/'env_name', 'w') as env_name_file:
             env_name_file.write(env_name)
         print('Building environment')
-        subprocess.check_call([
+        check_output([
             'docker', 'run',
             '-v', f'{tmp_dir}:/app/artifacts',
             '-t', image_name,
@@ -197,15 +216,15 @@ def main():
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers()
 
-    create = subparsers.add_parser('create')
+    create = subparsers.add_parser('create', help=handle_create.__doc__)
     create.add_argument('--lockfile', default=pathlib.Path('deps.yml.lock'), type=pathlib.Path)
     create.set_defaults(handler=handle_create)
 
-    check = subparsers.add_parser('check')
+    check = subparsers.add_parser('check', help=handle_check.__doc__)
     check.add_argument('--depsfile', default=pathlib.Path('deps.yml'), type=pathlib.Path)
     check.set_defaults(handler=handle_check)
 
-    freeze = subparsers.add_parser('freeze')
+    freeze = subparsers.add_parser('freeze', help=handle_freeze.__doc__)
     freeze.add_argument('--depsfile', default=pathlib.Path('deps.yml'), type=pathlib.Path)
     freeze.add_argument('--lockfile', default=pathlib.Path('deps.yml.lock'), type=pathlib.Path)
     freeze.set_defaults(handler=handle_freeze)
@@ -214,3 +233,7 @@ def main():
     success = args.handler(args)
     if not success:
         sys.exit(1)
+
+
+if __name__ == '__main__':
+    main()
