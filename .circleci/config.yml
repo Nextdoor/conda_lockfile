@@ -3,19 +3,12 @@ version: 2
 jobs:
   unit_test:
     docker:
-      - image: circleci/python:3-jessie-node-browsers
-    environment:
-      MINICONDA_VERSION: "Miniconda3-4.5.4-Linux-x86_64.sh"
+      - image: conda/miniconda3
 
     steps:
       - checkout
-      - run: wget https://repo.continuum.io/miniconda/$MINICONDA_VERSION
-      - run: bash $MINICONDA_VERSION -b -f -p $HOME/miniconda
-      - run:
-          name: Run tests
-          command: |
-            source $HOME/miniconda/etc/profile.d/conda.sh
-            python setup.py test
+      - run: conda install -y setuptools
+      - run: python setup.py test
 
   mypy:
     docker:
@@ -27,21 +20,20 @@ jobs:
 
   conda_build:
     docker:
-      - image: circleci/python:3-jessie-node-browsers
-    environment:
-      MINICONDA_VERSION: "Miniconda3-4.5.4-Linux-x86_64.sh"
+      - image: conda/miniconda3
 
     steps:
       - checkout
-      - run: wget https://repo.continuum.io/miniconda/$MINICONDA_VERSION
-      - run: bash $MINICONDA_VERSION -b -f -p $HOME/miniconda
-      - run:
-          name: Build conda packages
-          command: | 
-            source $HOME/miniconda/etc/profile.d/conda.sh
-            conda install -y conda-build
-            conda build .
+      - run: conda install -y conda-build
+      - run: conda build .
 
+  push_anaconda_org:
+    docker:
+      - image: conda/miniconda3
+    steps:
+      - checkout
+      - run: conda install -y anaconda-client conda-build
+      - run: conda build . --output | xargs anaconda -t $ANACONDA_ORG_TOKEN upload
 
 workflows:
   version: 2
@@ -50,3 +42,9 @@ workflows:
       - unit_test
       - mypy
       - conda_build
+      - push_anaconda_org:
+          filters:
+            tags:
+              only: /release.*/
+            branches:
+              ignore: /.*/
