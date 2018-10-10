@@ -199,7 +199,7 @@ def handle_freeze(args) -> int:
         with open(tmp_dir/'env_name', 'w') as env_name_file:
             env_name_file.write(env_name)
         print('Building environment')
-        out = check_output([
+        check_output([
             'docker', 'run',
             '-v', f'{tmp_dir}:/app/artifacts',
             '-t', image_name,
@@ -207,8 +207,7 @@ def handle_freeze(args) -> int:
 
         # I've seen weird errors where the pip dependencies are excluded.  Make
         # sure the lockfile is not horribly broken.
-        with open(tmp_dir/'deps.yml') as spec, open(tmp_dir/'deps.yml.lock') as lock:
-            is_success = lockfile_is_spec_superset(yaml.load(spec), yaml.load(lock))
+        is_success = lockfile_is_depsfile_superset(tmp_dir/'deps.yml', tmp_dir/'deps.yml.lock')
         if not is_success:
             return FAILURE_CODE
 
@@ -236,7 +235,11 @@ def only_pkg_name(seq: Iterable[str]) -> Set[str]:
     return {x.split('=')[0] for x in seq}
 
 
-def lockfile_is_spec_superset(spec: dict, lock: dict):
+def lockfile_is_depsfile_superset(deps_path: pathlib.Path, lock_path: pathlib.Path):
+    with open(deps_path) as f:
+        spec = yaml.load(f)
+    with open(lock_path) as f:
+        lock = yaml.load(f)
     conda_spec, pip_spec = get_deps(spec)
     conda_lock, pip_lock = get_deps(lock)
     return conda_lock.issuperset(conda_spec) and pip_lock.issuperset(pip_spec)
