@@ -7,6 +7,8 @@ import shutil
 import subprocess
 import sys
 import tempfile
+from typing import Iterable
+from typing import Set
 from typing import Tuple
 
 import yaml
@@ -101,8 +103,8 @@ def get_prefix(name: str) -> pathlib.Path:
     :rtype: pathlib.Path
     """
     out = check_output([find_conda(), 'info', '--json'])
-    out = json.loads(out)
-    prefix = out['envs_dirs'][0]
+    data = json.loads(out)
+    prefix = data['envs_dirs'][0]
     prefix = pathlib.Path(prefix)
     return prefix/name
 
@@ -197,11 +199,19 @@ def handle_freeze(args) -> int:
         with open(tmp_dir/'env_name', 'w') as env_name_file:
             env_name_file.write(env_name)
         print('Building environment')
-        check_output([
+        out = check_output([
             'docker', 'run',
             '-v', f'{tmp_dir}:/app/artifacts',
             '-t', image_name,
         ])
+
+        # I've seen weird errors where the pip dependencies are excluded.  Make
+        # sure the lockfile is not horribly broken.
+        with open(tmp_dir/'deps.yml') as spec, open(tmp_dir/'deps.yml.lock') as lock:
+            is_success = lockfile_is_spec_superset(yaml.load(spec), yaml.load(lock))
+        if not is_success:
+            return FAILURE_CODE
+
         print('Writing lockfile')
         with open(args.lockfile, 'w') as lockfile, open(tmp_dir/'deps.yml.lock') as tmp_env_file:
             # Embed a hash of the source deps file into the lockfile.
@@ -210,6 +220,26 @@ def handle_freeze(args) -> int:
             lockfile.write(tmp_env_file.read())
 
     return SUCCESS_CODE
+
+
+def get_deps(deps: dict) -> Tuple[Set[str], Set[str]]:
+    pip_deps: Set[str] = set()
+    conda_deps = deps[:]
+    for d in conda_deps[:]:
+        if isinstance(d, dict):
+            pip_deps.update(d['pip'])
+            conda_deps.remove(d)
+    return only_pkg_name(conda_deps), only_pkg_name(pip_deps)
+
+
+def only_pkg_name(seq: Iterable[str]) -> Set[str]:
+    return {x.split('=')[0] for x in seq}
+
+
+def lockfile_is_spec_superset(spec: dict, lock: dict):
+    conda_spec, pip_spec = get_deps(spec)
+    conda_lock, pip_lock = get_deps(lock)
+    return conda_lock.issuperset(conda_spec) and pip_lock.issuperset(pip_spec)
 
 
 def main():
