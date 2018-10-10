@@ -221,7 +221,15 @@ def handle_freeze(args) -> int:
     return SUCCESS_CODE
 
 
-def get_deps(deps: dict) -> Tuple[Set[str], Set[str]]:
+def get_deps(deps: list) -> Tuple[Set[str], Set[str]]:
+    """Extra conda/pip dependecies from environmentfile data
+
+    Args:
+        deps: data from environment.yml file
+    Returns:
+        conda_dependencies
+        pip_dependencies
+    """
     pip_deps: Set[str] = set()
     conda_deps = deps[:]
     for d in conda_deps[:]:
@@ -232,16 +240,27 @@ def get_deps(deps: dict) -> Tuple[Set[str], Set[str]]:
 
 
 def only_pkg_name(seq: Iterable[str]) -> Set[str]:
+    """Strip out everything but package name from dependencies"""
     return {x.split('=')[0] for x in seq}
 
 
 def lockfile_is_depsfile_superset(deps_path: pathlib.Path, lock_path: pathlib.Path):
+    """Are the lockfile dependencies a superset of what is requested in the depsfile?
+
+    They ought be.
+
+    Args:
+        deps_path: path to deps.yml
+        lock_path: path to deps.yml.lock
+    Returns:
+        bool
+    """
     with open(deps_path) as f:
         spec = yaml.load(f)
     with open(lock_path) as f:
         lock = yaml.load(f)
-    conda_spec, pip_spec = get_deps(spec)
-    conda_lock, pip_lock = get_deps(lock)
+    conda_spec, pip_spec = get_deps(spec['dependencies'])
+    conda_lock, pip_lock = get_deps(lock['dependencies'])
     return conda_lock.issuperset(conda_spec) and pip_lock.issuperset(pip_spec)
 
 
