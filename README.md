@@ -55,5 +55,5 @@ detecting changes to `deps.yml` that invalidate the existing environment.
 
 `conda lockfile checklocks`
 ---------------------------
-Verifieds that your lockfiles deps.yml.{Linux|Darwin}.lock are in sync with
+Verifies that your lockfiles deps.yml.{Linux|Darwin}.lock are in sync with
 your `deps.yml` files.
