@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='conda_lockfile',
-    version='0.1',
+    version='0.2',
     packages=['conda_lockfile'],
     install_requires=[
         'PyYAML',
