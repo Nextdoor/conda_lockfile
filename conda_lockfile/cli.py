@@ -3,17 +3,21 @@
 1. Make a dependencies file `deps.yml`.  Only specify the dependencies you
 specifically care about.  ex exclude transitive dependencies and versions you
 don't care about.
-2. `freeze` this to a `deps.yml.lock`.  The lockfile pins all dependencies
-(including transitive dependencies) to the version & build number.
+
+2. `freeze` this to a `deps.yml.{platform}.lock`.  The lockfile pins all dependencies
+(including transitive dependencies) down to the version & build number.
+
 3. `create` the environment specified in the `deps.yml.lock`
-4. `check` that the installed environment matches the one specified in $foo
+
+4. `checkenv` that the installed environment matches the one specified in $foo
+
+5. `checklocks` that your lockfiles are in sync with `deps.yml`
 
 conda lockfile is linux-centric.  The lockfile is generated to be
 """
 import argparse
 import glob
 import hashlib
-import json
 import logging
 import os
 import pathlib
@@ -118,11 +122,8 @@ def get_prefix(name: str) -> pathlib.Path:
     :param str name: The name of the environment.
     :rtype: pathlib.Path
     """
-    out = check_output([find_conda(), 'info', '--json'])
-    data = json.loads(out)
-    prefix = data['envs_dirs'][0]
-    prefix = pathlib.Path(prefix)
-    return prefix/name
+    root = pathlib.Path(os.environ['CONDA_ROOT'])
+    return root/'envs'/name
 
 
 def handle_create(args) -> int:
