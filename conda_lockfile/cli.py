@@ -167,13 +167,13 @@ def handle_checkenv(args) -> int:
         try:
             found_hash = read_env_hash(lockfile)
         except MissingEnvHash:
-            logger.critical(f'Unable to find hash in {lockfile_path}')
+            logger.error(f'Unable to find hash in {lockfile_path}')
             return FAILURE_CODE
 
     if expected_hash != found_hash:
-        logger.critical(f'deps file ({depsfile_path}) and environment ({lockfile_path}) do not match')  # noqa
-        logger.critical(f'expected: {expected_hash}')
-        logger.critical(f'found:    {found_hash}')
+        logger.error(f'deps file ({depsfile_path}) and environment ({lockfile_path}) do not match')
+        logger.error(f'expected: {expected_hash}')
+        logger.error(f'found:    {found_hash}')
         return FAILURE_CODE
 
     return SUCCESS_CODE
@@ -188,9 +188,9 @@ def handle_freeze(args) -> int:
     if args.platform != SYSTEM:
         if SYSTEM == 'Darwin' and args.platform == 'Linux':
             return _linux_on_mac_freeze(args)
-        logger.critical('Cross-platform build requested')
-        logger.critical('The only supported cross platform build is `--platform=Linux` on Darwin')
-        logger.critical(f'--platform={args.platform} on {SYSTEM} was requested')
+        logger.error('Cross-platform build requested')
+        logger.error('The only supported cross platform build is `--platform=Linux` on Darwin')
+        logger.error(f'--platform={args.platform} on {SYSTEM} was requested')
 
         return FAILURE_CODE
 
@@ -341,11 +341,11 @@ def handle_checklocks(args) -> int:
             try:
                 found_hash = read_env_hash(lockfile)
             except MissingEnvHash:
-                logger.critical(f'Unable to find hash in {path}')
+                logger.error(f'Unable to find hash in {path}')
                 return_code = FAILURE_CODE
                 continue
             if expected_hash != found_hash:
-                logger.critical(f'deps file ({args.depsfile}) and lockfile ({path}) do not match')
+                logger.error(f'deps file ({args.depsfile}) and lockfile ({path}) do not match')
                 return_code = FAILURE_CODE
 
     return return_code
@@ -379,12 +379,12 @@ def main():
 
     # All subparsers should have a --verbose option
     for subp in subparsers.choices.values():
-        subp.add_argument('--verbose', default=False, action='store_true')
+        subp.add_argument('-v', '--verbose', action='append_const', const='v', default=[])
 
     args = parser.parse_args()
 
-    if args.verbose:
-        logger.setLevel(logging.DEBUG)
+    verbosity = {0: logging.ERROR, 1: logging.INFO, 2: logging.DEBUG}
+    logger.setLevel(verbosity[len(args.verbose)])
     # We want the default values of lockfile to depend on --platform.
     # So re-compute the name after we're done parsing.
     if hasattr(args, 'lockfile') and args.lockfile is None:
