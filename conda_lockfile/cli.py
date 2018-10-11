@@ -68,7 +68,7 @@ class MissingEnvHash(Exception):
     pass
 
 
-def compute_env_hash_and_name(f) -> Tuple[str, str]:
+def compute_env_hash_and_name(f) -> Tuple[str, dict]:
     """Compute the hash of an deps.yml file & extract the env's name.
 
     :param bytes-mode-file f: deps.yml file object
@@ -77,8 +77,7 @@ def compute_env_hash_and_name(f) -> Tuple[str, str]:
     """
     env_hash = hashlib.sha1(f.read()).hexdigest()
     f.seek(0)
-    env_name = yaml.load(f)['name']
-    return env_hash, env_name
+    return env_hash, yaml.load(f)
 
 
 def read_env_hash(f) -> str:
@@ -154,7 +153,8 @@ def handle_check(args) -> int:
     """
     depsfile_path = args.depsfile
     with open(depsfile_path, 'rb') as depsfile:
-        expected_hash, env_name = compute_env_hash_and_name(depsfile)
+        expected_hash, env_data = compute_env_hash_and_name(depsfile)
+        env_name = env_data['name']
 
     prefix = get_prefix(env_name)
 
@@ -198,8 +198,8 @@ def _same_platform_freeze(args) -> int:
     # Use a novel env name to avoid clobbering an env that already exists
     # TODO: Write a context manger to get a unique name & make sure it is
     # deleted when done.
-    with open(args.depsfile) as depsfile:
-        deps_data = yaml.load(depsfile)
+    with open(args.depsfile, 'rb') as depsfile:
+        env_hash, deps_data = compute_env_hash_and_name(depsfile)
     env_name = deps_data['name']
 
     check_output(['conda', 'env', 'create', '-f', args.depsfile, '-n', tmp_env_name, '--force'])
@@ -207,9 +207,10 @@ def _same_platform_freeze(args) -> int:
     lock_data = yaml.load(lock_yaml)
     # Replace the temporary name with the real name.
     lock_data['name'] = env_name
+    del lock_data['prefix']
 
-    with open(args.lockfile, 'w') as lockfile:
-        yaml.dump(lock_data, stream=lockfile)
+    data = yaml.dump(lock_data)
+    write_lockfile(data, env_hash, args.lockfile)
 
     return SUCCESS_CODE
 
@@ -225,7 +226,8 @@ def _linux_on_mac_freeze(args) -> int:
     check_output(['docker', 'build', pkg_root/'builder', '-t', image_name])
 
     with open(args.depsfile, 'rb') as depsfile:
-        env_hash, env_name = compute_env_hash_and_name(depsfile)
+        env_hash, env_data = compute_env_hash_and_name(depsfile)
+        env_name = env_data['name']
 
     TMP_DIR = '/tmp/conda_lockfile'
     try:
@@ -259,14 +261,20 @@ def _linux_on_mac_freeze(args) -> int:
         if not is_success:
             return FAILURE_CODE
 
-        print('Writing lockfile')
-        with open(args.lockfile, 'w') as lockfile, open(tmp_dir/'deps.yml.lock') as tmp_env_file:
-            # Embed a hash of the source deps file into the lockfile.
-            lockfile.write(ENVHASH_SIGIL + env_hash + '\n')
-            # Now write the contents of the lockfile.
-            lockfile.write(tmp_env_file.read())
+        with open(tmp_dir/'deps.yml.lock') as tmp_env_file:
+            data = tmp_env_file.read()
+        write_lockfile(data, env_hash, args.lockfile)
 
     return SUCCESS_CODE
+
+
+def write_lockfile(data: str, env_hash: str, lockfile_path: pathlib.Path) -> None:
+    print('Writing lockfile')
+    with open(lockfile_path, 'w') as lockfile:
+        # Embed a hash of the source deps file into the lockfile.
+        lockfile.write(ENVHASH_SIGIL + env_hash + '\n')
+        # Now write the contents of the lockfile.
+        lockfile.write(data)
 
 
 def get_deps(deps: list) -> Tuple[Set[str], Set[str]]:
