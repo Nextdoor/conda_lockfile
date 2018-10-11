@@ -1,8 +1,21 @@
+"""conda lockfile manages the lifecycle of conda environments & dependencies.
+
+1. Make a dependencies file `deps.yml`.  Only specify the dependencies you
+specifically care about.  ex exclude transitive dependencies and versions you
+don't care about.
+2. `freeze` this to a `deps.yml.lock`.  The lockfile pins all dependencies
+(including transitive dependencies) to the version & build number.
+3. `create` the environment specified in the `deps.yml.lock`
+4. `check` that the installed environment matches the one specified in $foo
+
+conda lockfile is linux-centric.  The lockfile is generated to be
+"""
 import argparse
 import hashlib
 import json
 import os
 import pathlib
+import platform
 import shutil
 import subprocess
 import sys
@@ -15,9 +28,10 @@ import yaml
 
 ENVHASH_SIGIL = '# ENVHASH:'
 
-
 SUCCESS_CODE = 0
 FAILURE_CODE = 1
+
+SYSTEM = platform.system()
 
 
 def check_output(cmd) -> bytes:
@@ -167,6 +181,40 @@ def handle_freeze(args) -> int:
     The lockfile will explicitly list all depdencenies needed to exactly
     re-create the environment.
     """
+    if args.platform != SYSTEM:
+        if SYSTEM == 'Darwin' and args.platform == 'Linux':
+            return _linux_on_mac_freeze(args)
+        print('Cross-platform build requested')
+        print('The only supported cross platform build is `--platform=Linux` on Darwin')
+        print(f'--platform={args.platform} on {SYSTEM} was requested')
+
+        return FAILURE_CODE
+
+    return _same_platform_freeze(args)
+
+
+def _same_platform_freeze(args) -> int:
+    tmp_env_name = '___conda_lockfile_temp'
+    # Use a novel env name to avoid clobbering an env that already exists
+    # TODO: Write a context manger to get a unique name & make sure it is
+    # deleted when done.
+    with open(args.depsfile) as depsfile:
+        deps_data = yaml.load(depsfile)
+    env_name = deps_data['name']
+
+    check_output(['conda', 'env', 'create', '-f', args.depsfile, '-n', tmp_env_name, '--force'])
+    lock_yaml = check_output(['conda', 'env', 'export', '-n', tmp_env_name]).decode('utf-8')
+    lock_data = yaml.load(lock_yaml)
+    # Replace the temporary name with the real name.
+    lock_data['name'] = env_name
+
+    with open(args.lockfile, 'w') as lockfile:
+        yaml.dump(lock_data, stream=lockfile)
+
+    return SUCCESS_CODE
+
+
+def _linux_on_mac_freeze(args) -> int:
     # The only way to know what should be in an environment is to build it and document
     # what dependencies showed up.
     # We do this in a docker container to ensure isolation, and to allow us to build
@@ -265,11 +313,11 @@ def lockfile_is_depsfile_superset(deps_path: pathlib.Path, lock_path: pathlib.Pa
 
 
 def main():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description=__doc__)
     subparsers = parser.add_subparsers()
 
     create = subparsers.add_parser('create', help=handle_create.__doc__)
-    create.add_argument('--lockfile', default=pathlib.Path('deps.yml.lock'), type=pathlib.Path)
+    create.add_argument('--lockfile', default=None, type=pathlib.Path)
     create.set_defaults(handler=handle_create)
 
     check = subparsers.add_parser('check', help=handle_check.__doc__)
@@ -278,13 +326,17 @@ def main():
 
     freeze = subparsers.add_parser('freeze', help=handle_freeze.__doc__)
     freeze.add_argument('--depsfile', default=pathlib.Path('deps.yml'), type=pathlib.Path)
-    freeze.add_argument('--lockfile', default=pathlib.Path('deps.yml.lock'), type=pathlib.Path)
+    freeze.add_argument('--lockfile', default=None, type=pathlib.Path)
+    freeze.add_argument('--platform', default=SYSTEM, type=str, choices=['Darwin', 'Linux'])
     freeze.set_defaults(handler=handle_freeze)
 
     args = parser.parse_args()
-    success = args.handler(args)
-    if not success:
-        sys.exit(1)
+    # We want the default values of lockfile to depend on --platform.
+    # So re-compute the name after we're done parsing.
+    if hasattr(args, 'lockfile') and args.lockfile is None:
+        args.lockfile = pathlib.Path(f'deps.yml.{args.platform}.lock')
+    return_code = args.handler(args)
+    sys.exit(return_code)
 
 
 if __name__ == '__main__':
