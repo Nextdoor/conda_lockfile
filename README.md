@@ -6,10 +6,23 @@ conda_lockfile
 `conda_lockfile` manages the life cycle of a production conda environment.
 
 The intention is to allow developers to manage their requirements at a
-relatively high level, while also being able to repeatably deploy the exact
-same environment.
+relatively high level, while also being able to freeze these requirements &
+ensuring that the same environment always gets created.
 
 ![Workflow](img/workflow.png)
+
+The expected workflow is (blue):
+
+1. Define a `deps.yml` file.
+1. Freeze (`conda lockfile freeze`) these requirements into a `deps.yml.{platform}.lock` file.
+1. Create (`conda lockfile create`) an environment from the lockfile.
+
+It is the nature of dependencies to evolve, so there are commands for verifying
+that your dependencies are in sync with your lockfiles and created
+environments (green).
+
+1. The depsfile and lockfile are in sync (`conda lockfile checklocks`).
+1. The depsfile and created environment are in sync (`conda lockfile checkenv`).
 
 `deps.yml`
 -----------------------
