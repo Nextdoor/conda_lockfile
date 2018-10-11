@@ -14,6 +14,7 @@ import argparse
 import glob
 import hashlib
 import json
+import logging
 import os
 import pathlib
 import platform
@@ -34,23 +35,26 @@ FAILURE_CODE = 1
 
 SYSTEM = platform.system()
 
+logger = logging.getLogger(__name__)
+
 
 def check_output(cmd) -> bytes:
-    print('running:', ' '.join(str(x) for x in cmd))
+    logger.debug('running: %s', ' '.join(str(x) for x in cmd))
     try:
         return subprocess.check_output(cmd)
     except subprocess.CalledProcessError as e:
-        print(e)
-        print('[cmd]\n', e.cmd)
-        print('')
-        print('[returncode]\n', e.returncode)
-        print('')
-        print('[output]\n', e.output.decode('utf-8'))
-        print('')
-        print('[stdout]\n', e.stdout.decode('utf-8') if e.stdout else None)
-        print('')
-        print('[stderr]\n', e.stderr.decode('utf-8') if e.stderr else None)
-        print('')
+        logger.debug(e)
+        logger.debug('[cmd]\n%s', e.cmd)
+        logger.debug('')
+        logger.debug('[returncode]\n%s', e.returncode)
+        logger.debug('')
+        logger.debug('[output]\n%s', e.output.decode('utf-8'))
+        logger.debug('')
+        logger.debug('[stdout]\n%s', e.stdout.decode('utf-8') if e.stdout else None)
+        logger.debug('')
+        logger.debug('[stderr]\n{e.stderr.decode("utf-8")}' if e.stderr else None)
+        logger.debug('[stderr]\n%s', e.stderr.decode('utf-8') if e.stderr else None)
+        logger.debug('')
         raise
 
 
@@ -163,13 +167,13 @@ def handle_checkenv(args) -> int:
         try:
             found_hash = read_env_hash(lockfile)
         except MissingEnvHash:
-            print(f'Unable to find hash in {lockfile_path}')
+            logger.critical(f'Unable to find hash in {lockfile_path}')
             return FAILURE_CODE
 
     if expected_hash != found_hash:
-        print(f'deps file ({depsfile_path}) and environment ({lockfile_path}) do not match:')
-        print(f'expected: {expected_hash}')
-        print(f'found:    {found_hash}')
+        logger.critical(f'deps file ({depsfile_path}) and environment ({lockfile_path}) do not match')  # noqa
+        logger.critical(f'expected: {expected_hash}')
+        logger.critical(f'found:    {found_hash}')
         return FAILURE_CODE
 
     return SUCCESS_CODE
@@ -184,9 +188,9 @@ def handle_freeze(args) -> int:
     if args.platform != SYSTEM:
         if SYSTEM == 'Darwin' and args.platform == 'Linux':
             return _linux_on_mac_freeze(args)
-        print('Cross-platform build requested')
-        print('The only supported cross platform build is `--platform=Linux` on Darwin')
-        print(f'--platform={args.platform} on {SYSTEM} was requested')
+        logger.critical('Cross-platform build requested')
+        logger.critical('The only supported cross platform build is `--platform=Linux` on Darwin')
+        logger.critical(f'--platform={args.platform} on {SYSTEM} was requested')
 
         return FAILURE_CODE
 
@@ -223,7 +227,7 @@ def _linux_on_mac_freeze(args) -> int:
     # work on mac.
     image_name = 'lock_file_maker'
     pkg_root = pathlib.Path(os.path.dirname(sys.modules['conda_lockfile'].__file__))
-    print('Creating docker builder image')
+    logger.info('Creating docker builder image')
     check_output(['docker', 'build', pkg_root/'builder', '-t', image_name])
 
     with open(args.depsfile, 'rb') as depsfile:
@@ -250,7 +254,7 @@ def _linux_on_mac_freeze(args) -> int:
         # knows what to name the environment.
         with open(tmp_dir/'env_name', 'w') as env_name_file:
             env_name_file.write(env_name)
-        print('Building environment')
+        logger.info('Building environment')
         check_output([
             'docker', 'run',
             '-v', f'{tmp_dir}:/app/artifacts',
@@ -271,7 +275,7 @@ def _linux_on_mac_freeze(args) -> int:
 
 
 def write_lockfile(data: str, env_hash: str, lockfile_path: pathlib.Path) -> None:
-    print('Writing lockfile')
+    logger.info('Writing lockfile')
     with open(lockfile_path, 'w') as lockfile:
         # Embed a hash of the source deps file into the lockfile.
         lockfile.write(ENVHASH_SIGIL + env_hash + '\n')
@@ -337,17 +341,19 @@ def handle_checklocks(args) -> int:
             try:
                 found_hash = read_env_hash(lockfile)
             except MissingEnvHash:
+                logger.critical(f'Unable to find hash in {path}')
                 return_code = FAILURE_CODE
-                print(f'Unable to find hash in {path}')
                 continue
             if expected_hash != found_hash:
-                print(f'deps file ({args.depsfile}) and lockfile ({path}) do not match')
+                logger.critical(f'deps file ({args.depsfile}) and lockfile ({path}) do not match')
                 return_code = FAILURE_CODE
 
     return return_code
 
 
 def main():
+    logging.basicConfig()
+
     parser = argparse.ArgumentParser(description=__doc__)
     subparsers = parser.add_subparsers()
 
@@ -371,7 +377,14 @@ def main():
     freeze.add_argument('--platform', default=SYSTEM, type=str, choices=['Darwin', 'Linux'])
     freeze.set_defaults(handler=handle_freeze)
 
+    # All subparsers should have a --verbose option
+    for subp in subparsers.choices.values():
+        subp.add_argument('--verbose', default=False, action='store_true')
+
     args = parser.parse_args()
+
+    if args.verbose:
+        logger.setLevel(logging.DEBUG)
     # We want the default values of lockfile to depend on --platform.
     # So re-compute the name after we're done parsing.
     if hasattr(args, 'lockfile') and args.lockfile is None:
