@@ -9,6 +9,8 @@ The intention is to allow developers to manage their requirements at a
 relatively high level, while also being able to repeatably deploy the exact
 same environment.
 
+![Workflow](img/workflow.png)
+
 `deps.yml`
 -----------------------
 The cycle starts with a deps.yml file (a conda environment file) that specifies
@@ -22,7 +24,7 @@ From this high level description of dependencies, `conda_lockfile` will
 generate a detailed, comprehensive list of dependencies.  ie a lockfile.  This
 file is immune to dependencies publishing updated versions.  So long as your
 project uses this lockfile the environment will be exactly the same.  The
-standard name for this file is `deps.yml.lock.  This file will generally be
+standard name for this file is `deps.yml.{platform}.lock.  This file will generally be
 checked into source control.
 
 `conda lockfile create`
@@ -31,9 +33,14 @@ From the lockfile, `conda_lockfile` can create an environment. This is a
 thin wrapper around `conda env create` plus some additional metadata
 to verify the provenance of the lockfile/environment.
 
-`conda lockfile check`
+`conda lockfile checkenv`
 ----------------------
 Verifies that `deps.yml` and installed environment "match".  It does this by
 embedding a hash of `deps.yml` and stashing that within the environment created
-from `deps.yml.lock`.  This is primarily useful for development & quickly
+from `deps.yml.{platform}.lock`.  This is primarily useful for development & quickly
 detecting changes to `deps.yml` that invalidate the existing environment.
+
+`conda lockfile checklocks`
+---------------------------
+Verifieds that your lockfiles deps.yml.{Linux|Darwin}.lock are in sync with
+your `deps.yml` files.
