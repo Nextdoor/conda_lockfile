@@ -68,16 +68,14 @@ class MissingEnvHash(Exception):
     pass
 
 
-def compute_env_hash_and_name(f) -> Tuple[str, dict]:
+def compute_env_hash(f) -> str:
     """Compute the hash of an deps.yml file & extract the env's name.
 
     :param bytes-mode-file f: deps.yml file object
     :rtype str env_hash: Hash of the environment
     :rtype str name: Name of the environment
     """
-    env_hash = hashlib.sha1(f.read()).hexdigest()
-    f.seek(0)
-    return env_hash, yaml.load(f)
+    return hashlib.sha1(f.read()).hexdigest()
 
 
 def read_env_hash(f) -> str:
@@ -153,8 +151,9 @@ def handle_check(args) -> int:
     """
     depsfile_path = args.depsfile
     with open(depsfile_path, 'rb') as depsfile:
-        expected_hash, env_data = compute_env_hash_and_name(depsfile)
-        env_name = env_data['name']
+        expected_hash = compute_env_hash(depsfile)
+        depsfile.seek(0)
+        env_name = yaml.load(depsfile.read().decode('utf-8'))['name']
 
     prefix = get_prefix(env_name)
 
@@ -199,8 +198,9 @@ def _same_platform_freeze(args) -> int:
     # TODO: Write a context manger to get a unique name & make sure it is
     # deleted when done.
     with open(args.depsfile, 'rb') as depsfile:
-        env_hash, deps_data = compute_env_hash_and_name(depsfile)
-    env_name = deps_data['name']
+        env_hash = compute_env_hash(depsfile)
+        depsfile.seek(0)
+        env_name = yaml.load(depsfile.read().decode('utf-8'))['name']
 
     check_output(['conda', 'env', 'create', '-f', args.depsfile, '-n', tmp_env_name, '--force'])
     lock_yaml = check_output(['conda', 'env', 'export', '-n', tmp_env_name]).decode('utf-8')
@@ -226,8 +226,9 @@ def _linux_on_mac_freeze(args) -> int:
     check_output(['docker', 'build', pkg_root/'builder', '-t', image_name])
 
     with open(args.depsfile, 'rb') as depsfile:
-        env_hash, env_data = compute_env_hash_and_name(depsfile)
-        env_name = env_data['name']
+        env_hash = compute_env_hash(depsfile)
+        depsfile.seek(0)
+        env_name = yaml.load(depsfile.read().decode('utf-8'))['name']
 
     TMP_DIR = '/tmp/conda_lockfile'
     try:
