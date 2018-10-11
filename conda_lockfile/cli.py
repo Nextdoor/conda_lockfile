@@ -327,6 +327,7 @@ def main():
 
     create = subparsers.add_parser('create', help=handle_create.__doc__)
     create.add_argument('--lockfile', default=None, type=pathlib.Path)
+    create.add_argument('--platform', default=SYSTEM, type=str, choices=['Darwin', 'Linux'])
     create.set_defaults(handler=handle_create)
 
     check = subparsers.add_parser('check', help=handle_check.__doc__)
