@@ -11,6 +11,7 @@ don't care about.
 conda lockfile is linux-centric.  The lockfile is generated to be
 """
 import argparse
+import glob
 import hashlib
 import json
 import os
@@ -121,7 +122,7 @@ def get_prefix(name: str) -> pathlib.Path:
 
 
 def handle_create(args) -> int:
-    """Create an environment from a env_file.
+    """Create an environment from a deps lock file.
 
     The environments created contain the metadata to describe their provenance.
     """
@@ -143,10 +144,10 @@ def handle_create(args) -> int:
     return SUCCESS_CODE
 
 
-def handle_check(args) -> int:
+def handle_checkenv(args) -> int:
     """Check that the installed environment's hash matches the specified requirements.
 
-    This computes a hash of the env_file & compares that with a hash embedded in
+    This computes a hash of the depsfile & compares that with a hash embedded in
     the constructed environment.
     """
     depsfile_path = args.depsfile
@@ -321,20 +322,50 @@ def lockfile_is_depsfile_superset(deps_path: pathlib.Path, lock_path: pathlib.Pa
     return conda_lock.issuperset(conda_spec) and pip_lock.issuperset(pip_spec)
 
 
+def handle_checklocks(args) -> int:
+    """Verify that the origin deps file and lockfiles are in sync with each other."""
+    lockfiles = args.lockfiles
+    if not lockfiles:
+        lockfiles = glob.glob('deps.yml.*.lock')
+
+    with open(args.depsfile, 'rb') as df:
+        expected_hash = compute_env_hash(df)
+
+    return_code = SUCCESS_CODE
+    for path in lockfiles:
+        with open(path) as lockfile:
+            try:
+                found_hash = read_env_hash(lockfile)
+            except MissingEnvHash:
+                return_code = FAILURE_CODE
+                print(f'Unable to find hash in {path}')
+                continue
+            if expected_hash != found_hash:
+                print(f'deps file ({args.depsfile}) and lockfile ({path}) do not match')
+                return_code = FAILURE_CODE
+
+    return return_code
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     subparsers = parser.add_subparsers()
 
-    create = subparsers.add_parser('create', help=handle_create.__doc__)
+    create = subparsers.add_parser('create', description=handle_create.__doc__)
     create.add_argument('--lockfile', default=None, type=pathlib.Path)
     create.add_argument('--platform', default=SYSTEM, type=str, choices=['Darwin', 'Linux'])
     create.set_defaults(handler=handle_create)
 
-    check = subparsers.add_parser('check', help=handle_check.__doc__)
-    check.add_argument('--depsfile', default=pathlib.Path('deps.yml'), type=pathlib.Path)
-    check.set_defaults(handler=handle_check)
+    checkenv = subparsers.add_parser('checkenv', description=handle_checkenv.__doc__)
+    checkenv.add_argument('--depsfile', default=pathlib.Path('deps.yml'), type=pathlib.Path)
+    checkenv.set_defaults(handler=handle_checkenv)
 
-    freeze = subparsers.add_parser('freeze', help=handle_freeze.__doc__)
+    checklocks = subparsers.add_parser('checklocks', description=handle_checklocks.__doc__)
+    checklocks.add_argument('--depsfile', default=pathlib.Path('deps.yml'), type=pathlib.Path)
+    checklocks.add_argument('lockfiles', nargs='*', default=None)
+    checklocks.set_defaults(handler=handle_checklocks)
+
+    freeze = subparsers.add_parser('freeze', description=handle_freeze.__doc__)
     freeze.add_argument('--depsfile', default=pathlib.Path('deps.yml'), type=pathlib.Path)
     freeze.add_argument('--lockfile', default=None, type=pathlib.Path)
     freeze.add_argument('--platform', default=SYSTEM, type=str, choices=['Darwin', 'Linux'])
