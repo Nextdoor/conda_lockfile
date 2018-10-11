@@ -10,7 +10,7 @@ cd artifacts
 # name to `conda env create` so there is no ambiguity when calling `conda env
 # export`.  This name *ought* be what is specified in `env.yml` itself.
 ENV_NAME=$(cat env_name)
-$CONDA_ROOT/bin/conda env create -f env.yml -n $ENV_NAME env.yml
+$CONDA_ROOT/bin/conda env create -f deps.yml -n $ENV_NAME
 # The prefix line includes an absolute path from inside this container.
 # Remove it to avoid confusion.
 $CONDA_ROOT/bin/conda env export -n $ENV_NAME | grep -v "^prefix:" > deps.yml.lock

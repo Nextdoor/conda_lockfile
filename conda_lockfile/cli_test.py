@@ -5,7 +5,7 @@ import pytest
 from . import cli
 
 
-def test_compute_env_hash_and_name():
+def test_compute_env_hash():
     f = io.BytesIO(
         b"""
         # name: not-test
@@ -15,8 +15,7 @@ def test_compute_env_hash_and_name():
         dependencies:
         - python=3.6
         """)
-    env_hash, name = cli.compute_env_hash_and_name(f)
-    assert name == 'test'
+    env_hash = cli.compute_env_hash(f)
     assert env_hash == 'd43c75e901a38edc8f01913b41bb3f757347a9b9'
 
 
