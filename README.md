@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/Nextdoor/conda_lockfile.svg?branch=master)](https://travis-ci.org/Nextdoor/conda_lockfile)
+
 conda_lockfile
 ==============
 
