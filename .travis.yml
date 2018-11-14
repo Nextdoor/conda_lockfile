@@ -15,7 +15,8 @@ script:
   - bash ci/script.sh
 
 deploy:
-  - bash ci/deploy.sh
+  provider: script
+  script: ci/deploy.sh
   on:
     tags: true
 
