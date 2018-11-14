@@ -1,0 +1,29 @@
+dist: trusty
+language: rust
+sudo: required
+
+matrix:
+  include:
+    - env: TARGET=x86_64-unknown-linux-gnu
+    - env: TARGET=x86_64-apple-darwin
+      os: osx
+
+install:
+  - sh ci/install.sh
+
+script:
+  - bash ci/script.sh
+
+deploy:
+  on:
+    branch: release_*
+
+branches:
+  only:
+    # release tags
+    - /^v\d+\.\d+\.\d+.*$/
+    - master
+
+notifications:
+  email:
+    on_success: never
