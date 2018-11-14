@@ -1,5 +1,7 @@
 #!/bin/bash 
 
+set -e
+
 cargo test
 
 export PATH="$HOME/miniconda/bin:$PATH"
