@@ -19,6 +19,7 @@ deploy:
   script: ci/deploy.sh
   on:
     tags: true
+    skip_cleanup: true
 
 notifications:
   email:
