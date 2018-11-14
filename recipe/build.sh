@@ -1,0 +1,1 @@
+cargo install --root=$PREFIX

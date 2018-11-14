@@ -1,0 +1,13 @@
+[package]
+name = "conda-lockfile"
+version = "0.1.0"
+authors = ["Matt Terry <mrterry@nextdoor.com>"]
+
+[dependencies]
+clap = "2"
+glob = "0.2"
+log = "0.4"
+sha1 = "0.6"
+simplelog = "0.4"
+tempfile = "3.0"
+yaml-rust = "0.4"

@@ -1,0 +1,16 @@
+package:
+  name: conda-lockfile
+  version: "0.2"
+
+channels:
+- conda-forge
+
+build:
+  nubmer: 0
+
+source:
+  path: ../
+
+requirements:
+  build:
+    - rust
