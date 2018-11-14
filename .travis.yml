@@ -20,11 +20,6 @@ deploy:
   on:
     tags: true
 
-branches:
-  only:
-    - /^release_[\d_]\+$/
-    - master
-
 notifications:
   email:
     on_success: never
