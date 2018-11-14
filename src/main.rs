@@ -95,14 +95,12 @@ fn get_app<'a, 'b>(default_platform: &'a str, default_lockfile: &'a str) -> App<
                         .help("Freeze dependencies for this platform"),
                 ),
         ).subcommand(
-            SubCommand::with_name("create")
-                .help("Create an env")
-                .arg(
-                    Arg::with_name("lockfile")
-                        .long("lockfile")
-                        .default_value(default_lockfile)
-                        .help("Create an env from this lockfile"),
-                ),
+            SubCommand::with_name("create").help("Create an env").arg(
+                Arg::with_name("lockfile")
+                    .long("lockfile")
+                    .default_value(default_lockfile)
+                    .help("Create an env from this lockfile"),
+            ),
         ).subcommand(
             SubCommand::with_name("checkenv")
                 .help("Verify that the env is up to date with the depsfile")
@@ -111,7 +109,7 @@ fn get_app<'a, 'b>(default_platform: &'a str, default_lockfile: &'a str) -> App<
                         .long("depfile")
                         .default_value("deps.yml")
                         .help("Compare the env with this depsfile"),
-            ),
+                ),
         ).subcommand(
             SubCommand::with_name("checklocks")
                 .help("Verify that the lock files are up to date with the depsfile")
