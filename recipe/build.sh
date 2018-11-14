@@ -1,5 +1,1 @@
-#!/bin/bash
-
-set -ex
-
-python setup.py install
+cargo install --root=$PREFIX

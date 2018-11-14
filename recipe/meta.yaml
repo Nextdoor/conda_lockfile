@@ -1,33 +1,16 @@
 package:
-  name: conda_lockfile
-  version: "0.1"
+  name: conda-lockfile
+  version: "0.2"
 
 channels:
-- defaults
+- conda-forge
 
 build:
-  number: 0
-  noarch: python
+  nubmer: 0
 
 source:
   path: ../
 
 requirements:
   build:
-    - python {{ python }}
-    - setuptools
-    - pytest
-    - pytest-runner
-    - pyyaml
-
-  run:
-    - python
-    - pyyaml
-
-test:
-  requires:
-    - pytest
-  imports:
-    - conda_lockfile.cli
-  commands:
-    - pytest --pyargs conda_lockfile
+    - rust

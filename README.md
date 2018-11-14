@@ -1,20 +1,23 @@
-[![CircleCI](https://circleci.com/gh/Nextdoor/conda_lockfile.svg?style=svg)](https://circleci.com/gh/Nextdoor/conda_lockfile)
-
 conda_lockfile
 ==============
 
-`conda_lockfile` manages the life cycle of a production conda environment.
+`conda_lockfile` manages the life cycle of a production application's conda
+environment.
 
 The intention is to allow developers to manage their requirements at a
 relatively high level, while also being able to freeze these requirements &
-ensuring that the same environment always gets created.
+ensuring that the same environment always gets created.  This is heavily
+influenced by [Cargo](https://doc.rust-lang.org/cargo/)'s `Cargo.toml` and
+`Cargo.lock` workflow, and in spirit with
+[poetry](https://github.com/sdispater/poetry).
 
 ![Workflow](img/workflow.png)
 
 The expected workflow is (blue):
 
 1. Define a `deps.yml` file.
-1. Freeze (`conda lockfile freeze`) these requirements into a `deps.yml.{platform}.lock` file.
+1. Freeze (`conda lockfile freeze`) these requirements into a
+   `deps.yml.{platform}.lock` file.
 1. Create (`conda lockfile create`) an environment from the lockfile.
 
 It is the nature of dependencies to evolve, so there are commands for verifying
@@ -23,6 +26,9 @@ environments (green).
 
 1. The depsfile and lockfile are in sync (`conda lockfile checklocks`).
 1. The depsfile and created environment are in sync (`conda lockfile checkenv`).
+
+When dependencies change, `deps.yml` should be updated and the lock files
+re-generated.
 
 `deps.yml`
 -----------------------
