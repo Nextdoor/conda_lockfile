@@ -22,8 +22,7 @@ deploy:
 
 branches:
   only:
-    # release tags
-    - /^v\d+\.\d+\.\d+.*$/
+    - /^release_[\d_]\+$/
     - master
 
 notifications:
