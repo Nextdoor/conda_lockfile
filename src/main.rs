@@ -78,10 +78,12 @@ fn get_app<'a, 'b>(default_platform: &'a str, default_lockfile: &'a str) -> App<
                 .help("Sets the level of verbosity"),
         ).subcommand(
             SubCommand::with_name("freeze")
+                .help("Freeze abstract dependencies into a lockfile")
                 .arg(
                     Arg::with_name("depfile")
                         .long("depfile")
-                        .default_value("deps.yml"),
+                        .default_value("deps.yml")
+                        .help("Freeze dependencies from this depfile"),
                 ).arg(
                     Arg::with_name("lockfile")
                         .long("lockfile")
@@ -89,31 +91,35 @@ fn get_app<'a, 'b>(default_platform: &'a str, default_lockfile: &'a str) -> App<
                 ).arg(
                     Arg::with_name("platform")
                         .long("platform")
-                        .default_value(default_platform),
+                        .default_value(default_platform)
+                        .help("Freeze dependencies for this platform"),
                 ),
         ).subcommand(
             SubCommand::with_name("create")
+                .help("Create an env")
                 .arg(
                     Arg::with_name("lockfile")
                         .long("lockfile")
-                        .default_value(default_lockfile),
-                ).arg(
-                    Arg::with_name("platform")
-                        .long("platform")
-                        .default_value(default_platform),
+                        .default_value(default_lockfile)
+                        .help("Create an env from this lockfile"),
                 ),
         ).subcommand(
-            SubCommand::with_name("checkenv").arg(
-                Arg::with_name("depfile")
-                    .long("depfile")
-                    .default_value("deps.yml"),
-            ),
-        ).subcommand(
-            SubCommand::with_name("checklocks")
+            SubCommand::with_name("checkenv")
+                .help("Verify that the env is up to date with the depsfile")
                 .arg(
                     Arg::with_name("depfile")
                         .long("depfile")
-                        .default_value("deps.yml"),
+                        .default_value("deps.yml")
+                        .help("Compare the env with this depsfile"),
+            ),
+        ).subcommand(
+            SubCommand::with_name("checklocks")
+                .help("Verify that the lock files are up to date with the depsfile")
+                .arg(
+                    Arg::with_name("depfile")
+                        .long("depfile")
+                        .default_value("deps.yml")
+                        .help("Check lock files against this depsfile"),
                 ).arg(Arg::with_name("lockfiles").multiple(true)),
         )
 }
