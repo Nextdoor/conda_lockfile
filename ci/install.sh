@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 if [[ "$(uname)" == "Darwin" ]]; then
     URL="https://repo.continuum.io/miniconda/Miniconda3-latest-MacOSX-x86_64.sh"
 else

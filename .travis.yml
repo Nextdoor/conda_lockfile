@@ -15,8 +15,9 @@ script:
   - bash ci/script.sh
 
 deploy:
+  - bash ci/deploy.sh
   on:
-    branch: release_*
+    tags: true
 
 branches:
   only:

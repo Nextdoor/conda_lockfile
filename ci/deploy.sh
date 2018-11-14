@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 export PATH="$HOME/miniconda/bin:$PATH"
 
 cd recipe
