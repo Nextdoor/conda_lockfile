@@ -71,6 +71,7 @@ fn interpolate_dockerfile() -> String {
 
 fn get_app<'a, 'b>(default_platform: &'a str) -> App<'a, 'b> {
     App::new("conda-lockfile")
+        .about("An application dependency workflow manager for conda")
         .version(VERSION)
         .arg(
             Arg::with_name("v")
@@ -80,39 +81,44 @@ fn get_app<'a, 'b>(default_platform: &'a str) -> App<'a, 'b> {
                 .help("Sets the level of verbosity"),
         ).subcommand(
             SubCommand::with_name("freeze")
-                .help("Freeze abstract dependencies into a lockfile")
+                .about("Freeze abstract dependencies into a lockfile")
                 .arg(
                     Arg::with_name("depfile")
+                        .short("d")
                         .long("depfile")
                         .default_value("deps.yml")
                         .help("Freeze dependencies from this depfile"),
                 ).arg(Arg::with_name("lockfile").long("lockfile"))
                 .arg(
                     Arg::with_name("platform")
+                        .short("p")
                         .long("platform")
                         .default_value(default_platform)
                         .help("Freeze dependencies for this platform"),
                 ),
         ).subcommand(
-            SubCommand::with_name("create").help("Create an env").arg(
+            SubCommand::with_name("create").about("Create an env").arg(
                 Arg::with_name("lockfile")
+                    .short("l")
                     .long("lockfile")
                     .help("Create an env from this lockfile"),
             ),
         ).subcommand(
             SubCommand::with_name("checkenv")
-                .help("Verify that the env is up to date with the depsfile")
+                .about("Verify that the env is up to date with the depsfile")
                 .arg(
                     Arg::with_name("depfile")
+                        .short("d")
                         .long("depfile")
                         .default_value("deps.yml")
                         .help("Compare the env with this depsfile"),
                 ),
         ).subcommand(
             SubCommand::with_name("checklocks")
-                .help("Verify that the lock files are up to date with the depsfile")
+                .about("Verify that the lock files are up to date with the depsfile")
                 .arg(
                     Arg::with_name("depfile")
+                        .short("d")
                         .long("depfile")
                         .default_value("deps.yml")
                         .help("Check lock files against this depsfile"),
