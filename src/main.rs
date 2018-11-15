@@ -610,6 +610,44 @@ mod tests {
     }
 
     #[test]
+    fn freeze_platform_lockfile() {
+        // Make sure setting the platform changes the default lockfile
+        let execution_platform = get_platform().unwrap();
+
+        let app = get_app(&execution_platform);
+        let matches = app.get_matches_from(
+            [
+                "conda-lockfile",
+                "freeze",
+                "--platform",
+                "Linux",
+            ]
+                .iter(),
+        );
+        let (name, sub_matches) = matches.subcommand();
+        let sub_matches = sub_matches.unwrap();
+        assert_eq!(name, "freeze");
+        assert_eq!(sub_matches.value_of("platform").unwrap(), "Linux");
+        assert_eq!(sub_matches.value_of("lockfile").unwrap(), "deps.yml.Linux.lock");
+
+        let app = get_app(&execution_platform);
+        let matches = app.get_matches_from(
+            [
+                "conda-lockfile",
+                "freeze",
+                "--platform",
+                "Darwin",
+            ]
+                .iter(),
+        );
+        let (name, sub_matches) = matches.subcommand();
+        let sub_matches = sub_matches.unwrap();
+        assert_eq!(name, "freeze");
+        assert_eq!(sub_matches.value_of("platform").unwrap(), "Darwin");
+        assert_eq!(sub_matches.value_of("lockfile").unwrap(), "deps.yml.Darwin.lock");
+    }
+
+    #[test]
     fn checklogs_files() {
         let execution_platform = get_platform().unwrap();
         let app = get_app(&execution_platform);
