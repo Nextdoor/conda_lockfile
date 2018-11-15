@@ -19,7 +19,7 @@ use std::str;
 
 use clap::{App, Arg, ArgMatches, SubCommand};
 use glob::glob;
-use simplelog::{Config, LogLevelFilter, TermLogger};
+use simplelog::{Config, LogLevelFilter, SimpleLogger, TermLogger};
 use tempfile::tempdir_in;
 use yaml_rust::{Yaml, YamlEmitter, YamlLoader};
 
@@ -151,7 +151,10 @@ fn main() -> Result<()> {
         2 => LogLevelFilter::Debug,
         _ => LogLevelFilter::Debug,
     };
-    TermLogger::init(log_level, Config::default()).unwrap();
+    match TermLogger::init(log_level, Config::default()) {
+        Ok(_) => {}
+        Err(_) => SimpleLogger::init(log_level, Config::default()).unwrap(),
+    }
     debug!("Setting log level to {}", log_level);
 
     let val = match app_m.subcommand() {
@@ -615,36 +618,26 @@ mod tests {
         let execution_platform = get_platform().unwrap();
 
         let app = get_app(&execution_platform);
-        let matches = app.get_matches_from(
-            [
-                "conda-lockfile",
-                "freeze",
-                "--platform",
-                "Linux",
-            ]
-                .iter(),
-        );
+        let matches = app.get_matches_from(["conda-lockfile", "freeze", "--platform", "Linux"].iter());
         let (name, sub_matches) = matches.subcommand();
         let sub_matches = sub_matches.unwrap();
         assert_eq!(name, "freeze");
         assert_eq!(sub_matches.value_of("platform").unwrap(), "Linux");
-        assert_eq!(sub_matches.value_of("lockfile").unwrap(), "deps.yml.Linux.lock");
+        assert_eq!(
+            sub_matches.value_of("lockfile").unwrap(),
+            "deps.yml.Linux.lock"
+        );
 
         let app = get_app(&execution_platform);
-        let matches = app.get_matches_from(
-            [
-                "conda-lockfile",
-                "freeze",
-                "--platform",
-                "Darwin",
-            ]
-                .iter(),
-        );
+        let matches = app.get_matches_from(["conda-lockfile", "freeze", "--platform", "Darwin"].iter());
         let (name, sub_matches) = matches.subcommand();
         let sub_matches = sub_matches.unwrap();
         assert_eq!(name, "freeze");
         assert_eq!(sub_matches.value_of("platform").unwrap(), "Darwin");
-        assert_eq!(sub_matches.value_of("lockfile").unwrap(), "deps.yml.Darwin.lock");
+        assert_eq!(
+            sub_matches.value_of("lockfile").unwrap(),
+            "deps.yml.Darwin.lock"
+        );
     }
 
     #[test]
