@@ -88,21 +88,32 @@ fn get_app<'a, 'b>(default_platform: &'a str) -> App<'a, 'b> {
                         .long("depfile")
                         .default_value("deps.yml")
                         .help("Freeze dependencies from this depfile"),
-                ).arg(Arg::with_name("lockfile").long("lockfile"))
+                )
                 .arg(
                     Arg::with_name("platform")
                         .short("p")
                         .long("platform")
                         .default_value(default_platform)
+                        .possible_values(&["Darwin", "Linux"])
                         .help("Freeze dependencies for this platform"),
-                ),
+                )
+                .arg(
+                    Arg::with_name("lockfile")
+                        .short("l")
+                        .long("lockfile")
+                        .default_value_if("platform", Some("Darwin"), "deps.yml.Darwin.lock")
+                        .default_value_if("platform", Some("Linux"), "deps.yml.Linux.lock")
+                        .help("Override the name of the generated lockfile [default: deps.yml.{Platform}.lock]"),
+                )
         ).subcommand(
-            SubCommand::with_name("create").about("Create an env").arg(
-                Arg::with_name("lockfile")
-                    .short("l")
-                    .long("lockfile")
-                    .help("Create an env from this lockfile"),
-            ),
+            SubCommand::with_name("create")
+                .about("Create an env")
+                .arg(
+                    Arg::with_name("lockfile")
+                        .short("l")
+                        .long("lockfile")
+                        .help("Create an env from this lockfile"),
+                ),
         ).subcommand(
             SubCommand::with_name("checkenv")
                 .about("Verify that the env is up to date with the depsfile")
@@ -122,7 +133,11 @@ fn get_app<'a, 'b>(default_platform: &'a str) -> App<'a, 'b> {
                         .long("depfile")
                         .default_value("deps.yml")
                         .help("Check lock files against this depsfile"),
-                ).arg(Arg::with_name("lockfiles").multiple(true)),
+                ).arg(
+                    Arg::with_name("lockfiles")
+                        .multiple(true)
+                        .help("Lockfiles to check.  Defaults to deps.yml.*")
+                ),
         )
 }
 
@@ -552,7 +567,7 @@ mod tests {
 
     #[test]
     fn freeze_defaults() {
-        let execution_platform = "Testing-Platform";
+        let execution_platform = get_platform().unwrap();
         let app = get_app(&execution_platform);
         let matches = app.get_matches_from(["conda-lockfile", "freeze"].iter());
         let (name, sub_matches) = matches.subcommand();
@@ -561,7 +576,7 @@ mod tests {
         assert_eq!(sub_matches.value_of("depfile").unwrap(), "deps.yml");
         assert_eq!(
             sub_matches.value_of("lockfile").unwrap(),
-            "deps.yml.Platform.lock"
+            format!("deps.yml.{}.lock", execution_platform),
         );
         assert_eq!(
             sub_matches.value_of("platform").unwrap(),
@@ -571,7 +586,7 @@ mod tests {
 
     #[test]
     fn freeze_options() {
-        let execution_platform = "Testing-Platform";
+        let execution_platform = get_platform().unwrap();
         let app = get_app(&execution_platform);
         let matches = app.get_matches_from(
             [
@@ -582,7 +597,7 @@ mod tests {
                 "--lockfile",
                 "custom_lockfile",
                 "--platform",
-                "custom_platform",
+                "Linux",
             ]
                 .iter(),
         );
@@ -591,12 +606,12 @@ mod tests {
         assert_eq!(name, "freeze");
         assert_eq!(sub_matches.value_of("depfile").unwrap(), "custom_depfile");
         assert_eq!(sub_matches.value_of("lockfile").unwrap(), "custom_lockfile");
-        assert_eq!(sub_matches.value_of("platform").unwrap(), "custom_platform");
+        assert_eq!(sub_matches.value_of("platform").unwrap(), "Linux");
     }
 
     #[test]
     fn checklogs_files() {
-        let execution_platform = "Testing-Platform";
+        let execution_platform = get_platform().unwrap();
         let app = get_app(&execution_platform);
         let matches = app.get_matches_from(["conda-lockfile", "checklocks", "foo", "bar"].iter());
         let (name, sub_matches) = matches.subcommand();
