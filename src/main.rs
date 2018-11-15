@@ -24,6 +24,7 @@ use tempfile::tempdir_in;
 use yaml_rust::{Yaml, YamlEmitter, YamlLoader};
 
 const SIGIL: &str = "# ENVHASH:";
+const VERSION: &'static str = env!("CARGO_PKG_VERSION");
 
 type Result<T> = std::result::Result<T, Box<Error>>;
 
@@ -70,6 +71,7 @@ fn interpolate_dockerfile() -> String {
 
 fn get_app<'a, 'b>(default_platform: &'a str) -> App<'a, 'b> {
     App::new("conda-lockfile")
+        .version(VERSION)
         .arg(
             Arg::with_name("v")
                 .short("v")
@@ -84,10 +86,8 @@ fn get_app<'a, 'b>(default_platform: &'a str) -> App<'a, 'b> {
                         .long("depfile")
                         .default_value("deps.yml")
                         .help("Freeze dependencies from this depfile"),
-                ).arg(
-                    Arg::with_name("lockfile")
-                        .long("lockfile"),
-                ).arg(
+                ).arg(Arg::with_name("lockfile").long("lockfile"))
+                .arg(
                     Arg::with_name("platform")
                         .long("platform")
                         .default_value(default_platform)
@@ -160,9 +160,7 @@ fn handle_freeze(matches: &ArgMatches) -> Result<()> {
     }
 
     match (execution_platform.as_str(), target_platform) {
-        ("Darwin", "Linux") => {
-            freeze_linux_on_mac(&depfile_path, &lockfile_path)
-        }
+        ("Darwin", "Linux") => freeze_linux_on_mac(&depfile_path, &lockfile_path),
         _ => {
             let msg = format!(
                 "Unable to target {} from {}",
