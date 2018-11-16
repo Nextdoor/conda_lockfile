@@ -151,10 +151,8 @@ fn main() -> Result<()> {
         2 => LogLevelFilter::Debug,
         _ => LogLevelFilter::Debug,
     };
-    match TermLogger::init(log_level, Config::default()) {
-        Ok(_) => {}
-        Err(_) => SimpleLogger::init(log_level, Config::default()).unwrap(),
-    }
+    TermLogger::init(log_level, Config::default())
+        .unwrap_or_else(|_| SimpleLogger::init(log_level, Config::default()).unwrap());
     debug!("Setting log level to {}", log_level);
 
     let val = match app_m.subcommand() {
@@ -195,9 +193,26 @@ fn handle_freeze(matches: &ArgMatches) -> Result<()> {
     }
 }
 
+fn lockfile_is_up_to_date(lockfile_path: &str, env_hash: &str) -> bool {
+    if let Ok(lockfile) = File::open(lockfile_path) {
+        if let Ok(found_hash) = read_sigil_hash(lockfile) {
+            info!("Found existing lockfile");
+            if found_hash == env_hash {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 fn freeze_same_platform(depfile_path: &str, lockfile_path: &str) -> Result<()> {
     debug!("Freezing");
     let (env_name, env_hash) = read_env_name_and_hash(&depfile_path)?;
+
+    if lockfile_is_up_to_date(&lockfile_path, &env_hash) {
+        info!("Existing lockfile has correct hash. Stopping.");
+        return Ok(());
+    }
 
     let conda_path = find_conda()?;
     // Create the environment, but use a name that is unlikely to clobber anything pre-existing.
@@ -265,6 +280,11 @@ fn read_env_name_and_hash(depfile_path: &str) -> Result<(String, String)> {
 fn freeze_linux_on_mac(depfile_path: &str, lockfile_path: &str) -> Result<()> {
     info!("Freezing Linux on mac");
     let (env_name, env_hash) = read_env_name_and_hash(&depfile_path)?;
+
+    if lockfile_is_up_to_date(&lockfile_path, &env_hash) {
+        info!("Existing lockfile has correct hash. Stopping.");
+        return Ok(());
+    }
 
     // The only way to know what should be in an environment is to build it and document what
     // dependencies showed up.  We do this in a docker container to ensure isolation, and to allow
@@ -618,7 +638,8 @@ mod tests {
         let execution_platform = get_platform().unwrap();
 
         let app = get_app(&execution_platform);
-        let matches = app.get_matches_from(["conda-lockfile", "freeze", "--platform", "Linux"].iter());
+        let matches =
+            app.get_matches_from(["conda-lockfile", "freeze", "--platform", "Linux"].iter());
         let (name, sub_matches) = matches.subcommand();
         let sub_matches = sub_matches.unwrap();
         assert_eq!(name, "freeze");
@@ -629,7 +650,8 @@ mod tests {
         );
 
         let app = get_app(&execution_platform);
-        let matches = app.get_matches_from(["conda-lockfile", "freeze", "--platform", "Darwin"].iter());
+        let matches =
+            app.get_matches_from(["conda-lockfile", "freeze", "--platform", "Darwin"].iter());
         let (name, sub_matches) = matches.subcommand();
         let sub_matches = sub_matches.unwrap();
         assert_eq!(name, "freeze");
