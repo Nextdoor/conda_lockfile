@@ -39,7 +39,7 @@ RUN apt-get update && \
     apt-get install --yes bzip2 curl libc6 libc6-dev libc-dev gcc net-tools && \
     apt-get autoclean
 
-RUN curl https://repo.anaconda.com/miniconda/Miniconda3-py38_4.8.2-MacOSX-x86_64.sh > miniconda.sh
+RUN curl https://repo.anaconda.com/miniconda/Miniconda3-py37_4.8.2-MacOSX-x86_64.sh > miniconda.sh
 RUN bash miniconda.sh -b -f -p $CONDA_ROOT
 RUN echo 'ONE_LINE_COMMAND' > build_lockfile.sh
 
