@@ -101,9 +101,9 @@ fn get_app<'a, 'b>(default_platform: &'a str) -> App<'a, 'b> {
                     Arg::with_name("lockfile")
                         .short("l")
                         .long("lockfile")
-                        .default_value_if("platform", Some("Darwin"), "deps.yml.Darwin.lock")
-                        .default_value_if("platform", Some("Linux"), "deps.yml.Linux.lock")
-                        .help("Override the name of the generated lockfile [default: deps.yml.{Platform}.lock]"),
+                        .default_value_if("platform", Some("Darwin"), "deps.Darwin.lock.yml")
+                        .default_value_if("platform", Some("Linux"), "deps.Linux.lock.yml")
+                        .help("Override the name of the generated lockfile [default: deps.{Platform}.lock.yml]"),
                 )
         ).subcommand(
             SubCommand::with_name("create")
