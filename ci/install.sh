@@ -3,9 +3,9 @@
 set -e
 
 if [[ "$(uname)" == "Darwin" ]]; then
-    URL="https://repo.continuum.io/miniconda/Miniconda3-latest-MacOSX-x86_64.sh"
+    URL="https://repo.anaconda.com/miniconda/Miniconda3-py38_4.8.2-MacOSX-x86_64.sh"
 else
-    URL="https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh"
+    URL="https://repo.anaconda.com/miniconda/Miniconda3-py38_4.8.2-Linux-x86_64.sh"
 fi
 wget $URL -O miniconda.sh;
 bash miniconda.sh -b -p $HOME/miniconda
