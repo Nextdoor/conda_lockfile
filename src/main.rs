@@ -174,7 +174,7 @@ fn handle_freeze(matches: &ArgMatches) -> Result<()> {
 
     let lockfile_path = match matches.value_of("lockfile") {
         Some(path) => path.to_string(),
-        None => format!("deps.yml.{}.lock", target_platform),
+        None => format!("deps.{}.lock.yml", target_platform),
     };
     if execution_platform == target_platform {
         info!("Execution & target platform match");
@@ -311,13 +311,13 @@ fn freeze_linux_on_mac(depfile_path: &str, lockfile_path: &str) -> Result<()> {
     let mut depsfile_data = String::new();
     {
         debug!("reading lockfile");
-        let dest = tmpdir_path.join("deps.yml.lock");
+        let dest = tmpdir_path.join("deps.lock.yml");
         let mut depsfile = File::open(dest)?;
         depsfile.read_to_string(&mut depsfile_data)?;
     }
 
     // Read the generated lockfile.
-    let mut tmp_lockfile = File::open(tmpdir_path.join("deps.yml.lock"))?;
+    let mut tmp_lockfile = File::open(tmpdir_path.join("deps.lock.yml"))?;
     let mut tmp_lockfile_data = String::new();
     tmp_lockfile.read_to_string(&mut tmp_lockfile_data)?;
 
@@ -446,7 +446,7 @@ fn handle_create(matches: &ArgMatches) -> Result<()> {
     let lockfile_path = match matches.value_of("lockfile") {
         Some(path) => path.to_string(),
         None => match get_platform() {
-            Ok(platform) => format!("deps.yml.{}.lock", platform),
+            Ok(platform) => format!("deps.{}.lock.yml", platform),
             Err(_) => "".to_string(),
         },
     };
@@ -472,7 +472,7 @@ fn handle_create(matches: &ArgMatches) -> Result<()> {
 
     // Copy lockfile to constructed env
     let mut embeded_lockfile = conda_prefix(&env_name)?;
-    embeded_lockfile.push("deps.yml.lock");
+    embeded_lockfile.push("deps.lock.yml");
     copy(lockfile_path, embeded_lockfile)?;
     Ok(())
 }
@@ -527,7 +527,7 @@ fn handle_checkenv(matches: &ArgMatches) -> Result<()> {
     info!("env name: {}", env_name);
 
     let root = env::var("CONDA_ROOT").unwrap();
-    let lockfile_path: PathBuf = [&root, "envs", env_name, "deps.yml.lock"].iter().collect();
+    let lockfile_path: PathBuf = [&root, "envs", env_name, "deps.lock.yml"].iter().collect();
     info!("lockfile_path: {}", lockfile_path.to_str().unwrap());
 
     let lockfile = File::open(lockfile_path)?;
@@ -545,7 +545,7 @@ fn handle_checkenv(matches: &ArgMatches) -> Result<()> {
 }
 
 fn find_lockfiles() -> Vec<PathBuf> {
-    let glob_paths: Vec<PathBuf> = glob("deps.yml.*.lock")
+    let glob_paths: Vec<PathBuf> = glob("deps.*.lock.yml")
         .expect("Failed to read glob pattern")
         .map(|x| x.unwrap())
         .collect();
@@ -599,7 +599,7 @@ mod tests {
         assert_eq!(sub_matches.value_of("depfile").unwrap(), "deps.yml");
         assert_eq!(
             sub_matches.value_of("lockfile").unwrap(),
-            format!("deps.yml.{}.lock", execution_platform),
+            format!("deps.{}.lock.yml", execution_platform),
         );
         assert_eq!(
             sub_matches.value_of("platform").unwrap(),
@@ -646,7 +646,7 @@ mod tests {
         assert_eq!(sub_matches.value_of("platform").unwrap(), "Linux");
         assert_eq!(
             sub_matches.value_of("lockfile").unwrap(),
-            "deps.yml.Linux.lock"
+            "deps.Linux.lock.yml"
         );
 
         let app = get_app(&execution_platform);
@@ -658,7 +658,7 @@ mod tests {
         assert_eq!(sub_matches.value_of("platform").unwrap(), "Darwin");
         assert_eq!(
             sub_matches.value_of("lockfile").unwrap(),
-            "deps.yml.Darwin.lock"
+            "deps.Darwin.lock.yml"
         );
     }
 
