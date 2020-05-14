@@ -36,10 +36,10 @@ WORKDIR /app
 ENV CONDA_ROOT /var/lib/conda
 
 RUN apt-get update && \
-    apt-get install --yes bzip2 curl libc6 libc6-dev libc-dev gcc net-tools && \
+    apt-get install --yes bzip2 coreutils curl libc6 libc6-dev libc-dev gcc net-tools && \
     apt-get autoclean
 
-RUN curl https://repo.anaconda.com/miniconda/Miniconda3-py37_4.8.2-MacOSX-x86_64.sh > miniconda.sh
+RUN curl https://repo.anaconda.com/miniconda/Miniconda3-py37_4.8.2-Linux-x86_64.sh > miniconda.sh
 RUN bash miniconda.sh -b -f -p $CONDA_ROOT
 RUN echo 'ONE_LINE_COMMAND' > build_lockfile.sh
 
@@ -57,7 +57,7 @@ ENV_NAME=$(cat env_name)
 $CONDA_ROOT/bin/conda env create -f deps.yml -n $ENV_NAME
 # The prefix line includes an absolute path from inside this container.
 # Remove it to avoid confusion.
-$CONDA_ROOT/bin/conda env export -n $ENV_NAME | grep -v \"^prefix:\" > deps.yml.lock
+$CONDA_ROOT/bin/conda env export -n $ENV_NAME | grep -v \"^prefix:\" > deps.lock.yml
 ";
 
 fn interpolate_dockerfile() -> String {
@@ -304,7 +304,7 @@ fn freeze_linux_on_mac(depfile_path: &str, lockfile_path: &str) -> Result<()> {
     }
 
     // run container
-    info!("Running container");
+    info!("Running container {}", img_name);
     run_container(&tmpdir_path, &img_name)?;
     info!("Container completed");
 
