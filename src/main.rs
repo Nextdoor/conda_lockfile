@@ -26,7 +26,7 @@ use yaml_rust::{Yaml, YamlEmitter, YamlLoader};
 const SIGIL: &str = "# ENVHASH:";
 const VERSION: &'static str = env!("CARGO_PKG_VERSION");
 
-type Result<T> = std::result::Result<T, Box<Error>>;
+type Result<T> = std::result::Result<T, Box<dyn Error>>;
 
 const DOCKERFILE: &str = "
 FROM debian:stretch
