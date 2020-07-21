@@ -12,10 +12,10 @@ use std::env;
 use std::error::Error;
 use std::fs::{copy, File};
 use std::io::prelude::*;
-use std::io::{Error as ioError, ErrorKind as ioErrorKind};
 use std::io::Result as ioResult;
+use std::io::{Error as ioError, ErrorKind as ioErrorKind};
 use std::path::{Path, PathBuf};
-use std::process::{Command, Stdio, Output};
+use std::process::{Command, Output, Stdio};
 use std::str;
 
 use clap::{App, Arg, ArgMatches, SubCommand};
@@ -210,11 +210,11 @@ fn run_command(path: &str, args: &[&str]) -> ioResult<Output> {
     info!("{}, {:?}", path, args);
     let output = Command::new(path).args(args).output();
     match output {
-        Ok(ok) => {Ok(ok)},
+        Ok(ok) => Ok(ok),
         Err(err) => {
             info!("{}", err.to_string());
             Err(err)
-        },
+        }
     }
 }
 
@@ -230,7 +230,18 @@ fn freeze_same_platform(depfile_path: &str, lockfile_path: &str) -> Result<()> {
     let conda_path = find_conda()?;
     // Create the environment, but use a name that is unlikely to clobber anything pre-existing.
     let tmp_name = "___conda_lockfile_temp".to_string();
-    run_command(&conda_path, &["env", "create", "-f", &depfile_path, "-n", &tmp_name, "--force"])?;
+    run_command(
+        &conda_path,
+        &[
+            "env",
+            "create",
+            "-f",
+            &depfile_path,
+            "-n",
+            &tmp_name,
+            "--force",
+        ],
+    )?;
     info!("Made new env new env");
 
     // Read the env create by `conda create`.
@@ -456,7 +467,20 @@ fn handle_create(matches: &ArgMatches) -> Result<()> {
 
     let conda_path = find_conda()?;
     info!("conda_path {}", conda_path);
-    let output = run_command(&conda_path, &["env", "create", "--force", "-q", "--json", "--name", &env_name, "-f", &lockfile_path.clone()])?;
+    let output = run_command(
+        &conda_path,
+        &[
+            "env",
+            "create",
+            "--force",
+            "-q",
+            "--json",
+            "--name",
+            &env_name,
+            "-f",
+            &lockfile_path.clone(),
+        ],
+    )?;
     debug!("{:?}", output);
 
     // Copy lockfile to constructed env
