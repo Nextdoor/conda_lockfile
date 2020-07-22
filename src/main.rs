@@ -12,9 +12,10 @@ use std::env;
 use std::error::Error;
 use std::fs::{copy, File};
 use std::io::prelude::*;
+use std::io::Result as ioResult;
 use std::io::{Error as ioError, ErrorKind as ioErrorKind};
 use std::path::{Path, PathBuf};
-use std::process::{Command, Stdio};
+use std::process::{Command, Output, Stdio};
 use std::str;
 
 use clap::{App, Arg, ArgMatches, SubCommand};
@@ -205,6 +206,18 @@ fn lockfile_is_up_to_date(lockfile_path: &str, env_hash: &str) -> bool {
     return false;
 }
 
+fn run_command(path: &str, args: &[&str]) -> ioResult<Output> {
+    info!("{}, {:?}", path, args);
+    let output = Command::new(path).args(args).output();
+    match output {
+        Ok(ok) => Ok(ok),
+        Err(err) => {
+            info!("{}", err.to_string());
+            Err(err)
+        }
+    }
+}
+
 fn freeze_same_platform(depfile_path: &str, lockfile_path: &str) -> Result<()> {
     debug!("Freezing");
     let (env_name, env_hash) = read_env_name_and_hash(&depfile_path)?;
@@ -217,8 +230,9 @@ fn freeze_same_platform(depfile_path: &str, lockfile_path: &str) -> Result<()> {
     let conda_path = find_conda()?;
     // Create the environment, but use a name that is unlikely to clobber anything pre-existing.
     let tmp_name = "___conda_lockfile_temp".to_string();
-    Command::new(&conda_path)
-        .args(&[
+    run_command(
+        &conda_path,
+        &[
             "env",
             "create",
             "-f",
@@ -226,14 +240,13 @@ fn freeze_same_platform(depfile_path: &str, lockfile_path: &str) -> Result<()> {
             "-n",
             &tmp_name,
             "--force",
-        ]).output()?;
+        ],
+    )?;
     info!("Made new env new env");
 
     // Read the env create by `conda create`.
     debug!("Reading env");
-    let output = Command::new(&conda_path)
-        .args(&["env", "export", "-n", &tmp_name])
-        .output()?;
+    let output = run_command(&conda_path, &["env", "export", "-n", &tmp_name])?;
     let lock_data = str::from_utf8(&output.stdout)?;
     debug!("Env data:\n{}", lock_data);
 
@@ -358,9 +371,7 @@ fn build_container() -> String {
 
 fn run_container(dir: &Path, img_name: &str) -> Result<()> {
     let vol_mount = format!("{}:/app/artifacts", dir.to_str().unwrap());
-    let output = Command::new("docker")
-        .args(&["run", "-v", &vol_mount, "-t", img_name])
-        .output()?;
+    let output = run_command("docker", &["run", "-v", &vol_mount, "-t", img_name])?;
     let msg = std::str::from_utf8(&(output.stdout))?;
     debug!("{}", msg);
     Ok(())
@@ -456,8 +467,9 @@ fn handle_create(matches: &ArgMatches) -> Result<()> {
 
     let conda_path = find_conda()?;
     info!("conda_path {}", conda_path);
-    let output = Command::new(conda_path)
-        .args(&[
+    let output = run_command(
+        &conda_path,
+        &[
             "env",
             "create",
             "--force",
@@ -466,8 +478,9 @@ fn handle_create(matches: &ArgMatches) -> Result<()> {
             "--name",
             &env_name,
             "-f",
-            &lockfile_path,
-        ]).output()?;
+            &lockfile_path.clone(),
+        ],
+    )?;
     debug!("{:?}", output);
 
     // Copy lockfile to constructed env
