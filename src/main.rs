@@ -206,9 +206,9 @@ fn lockfile_is_up_to_date(lockfile_path: &str, env_hash: &str) -> bool {
     return false;
 }
 
-fn run_command(path: &str, args: &[&str]) -> ioResult<Output> {
-    info!("{}, {:?}", path, args);
-    let output = Command::new(path).args(args).output();
+fn run_command(executable: &str, args: &[&str]) -> ioResult<Output> {
+    info!("{}, {:?}", executable, args);
+    let output = Command::new(executable).args(args).output();
     match output {
         Ok(ok) => Ok(ok),
         Err(err) => {
