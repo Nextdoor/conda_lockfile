@@ -486,7 +486,14 @@ fn handle_create(matches: &ArgMatches) -> Result<()> {
     // Copy lockfile to constructed env
     let mut embeded_lockfile = conda_prefix(&env_name)?;
     embeded_lockfile.push("deps.lock.yml");
-    copy(lockfile_path, embeded_lockfile)?;
+    let res = copy(&lockfile_path, embeded_lockfile);
+    match res {
+        Ok(status) => status,
+        Err(_) => {
+            let msg = format!("Unable to copy {} to ", lockfile_path);
+            return Err(ioError::new(ioErrorKind::Other, msg).into());
+        }
+    };
     Ok(())
 }
 
