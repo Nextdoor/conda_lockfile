@@ -208,11 +208,27 @@ fn lockfile_is_up_to_date(lockfile_path: &str, env_hash: &str) -> bool {
 
 fn run_command(executable: &str, args: &[&str]) -> ioResult<Output> {
     info!("{}, {:?}", executable, args);
-    let output = Command::new(executable).args(args).output();
-    match output {
-        Ok(ok) => Ok(ok),
+    match Command::new(executable).args(args).output() {
+        Ok(output) => {
+            info!("Command status: {}", output.status);
+            if output.status.success() {
+                Ok(output)
+            } else {
+                error!("Error executing: {}, {:?}", executable, args);
+                error!("Command status: {}", output.status);
+                match String::from_utf8(output.stdout) {
+                    Ok(txt) => error!("stdout {}",  txt),
+                    _ => {}
+                };
+                match String::from_utf8(output.stderr) {
+                    Ok(txt) => error!("stderr {}",  txt),
+                    _ => {}
+                };
+                Err(ioError::new(ioErrorKind::Other, "Exeuction failed").into())
+            }
+        }
         Err(err) => {
-            info!("{}", err.to_string());
+            info!("error running command {}", err.to_string());
             Err(err)
         }
     }
@@ -607,6 +623,18 @@ fn handle_checklocks(matches: &ArgMatches) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn run_command_success() {
+        let result = run_command("ls", &["."]);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn run_command_failure() {
+        let result = run_command("cat", &["does-not-exist"]);
+        assert!(result.is_err());
+    }
 
     #[test]
     fn freeze_defaults() {
