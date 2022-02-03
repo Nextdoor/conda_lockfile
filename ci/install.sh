@@ -4,7 +4,7 @@ set -e
 
 if [[ "$(uname)" == "Darwin" ]]; then
     URL="https://repo.anaconda.com/miniconda/Miniconda3-py37_4.8.2-MacOSX-x86_64.sh"
-    ln -s $HOME/miniconda/libffi.7.dylib $HOME/miniconda/libffi.6.dylib
+    ln -s $HOME/miniconda/lib/libffi.7.dylib $HOME/miniconda/lib/libffi.6.dylib
 else
     URL="https://repo.anaconda.com/miniconda/Miniconda3-py37_4.8.2-Linux-x86_64.sh"
 fi
