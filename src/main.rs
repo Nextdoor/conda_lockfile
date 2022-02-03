@@ -37,7 +37,7 @@ WORKDIR /app
 ENV CONDA_ROOT /var/lib/conda
 
 RUN apt-get update && \
-    apt-get install --yes bzip2 coreutils curl libc6 libc6-dev libc-dev gcc net-tools && \
+    apt-get install --yes bzip2 coreutils curl libc6 libc6-dev libc-dev gcc g++ net-tools && \
     apt-get autoclean
 
 RUN curl https://repo.anaconda.com/miniconda/Miniconda3-py37_4.8.2-Linux-x86_64.sh > miniconda.sh
