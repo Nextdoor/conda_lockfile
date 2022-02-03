@@ -7,6 +7,7 @@ if [[ "$(uname)" == "Darwin" ]]; then
 else
     URL="https://repo.anaconda.com/miniconda/Miniconda3-py37_4.8.2-Linux-x86_64.sh"
 fi
+ln -s libffi.7.dylib libffi.6.dylib
 wget $URL -O miniconda.sh;
 bash miniconda.sh -b -p $HOME/miniconda
 export PATH="$HOME/miniconda/bin:$PATH"
