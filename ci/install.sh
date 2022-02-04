@@ -9,19 +9,15 @@ else
 fi
 wget $URL -O miniconda.sh;
 bash miniconda.sh -b -p $HOME/miniconda
-ls $HOME/miniconda/lib/
 export PATH="$HOME/miniconda/bin:$PATH"
-echo "here1"
 conda config --set always_yes yes --set changeps1 no
-ls $HOME/miniconda/lib/
-echo "here2"
 conda update -q conda
-ls $HOME/miniconda/lib/
+
+# `conda update -q conda` removes libffi.6.dylib and replaces it with libffi.7.dylib and libffi.8.dylib
+# libffi.6.dylib is required for `conda install`. https://github.com/conda/conda/issues/9038.
 ln -s $HOME/miniconda/lib/libffi.7.dylib $HOME/miniconda/lib/libffi.6.dylib
-echo "here3"
+
 # Useful for debugging any issues with conda
 conda info -a
-ls $HOME/miniconda/lib/
-echo "here4"
+
 conda install -q conda-build anaconda-client
-ls $HOME/miniconda/lib/
