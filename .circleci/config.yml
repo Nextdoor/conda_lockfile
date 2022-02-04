@@ -1,8 +1,5 @@
 version: 2.1
 
-orbs: 
-  rust: circleci/rust@1.6.0
-
 jobs:
   unit_test:
     docker:
@@ -25,7 +22,7 @@ jobs:
 workflows:
   run_ci:
     jobs:
-      - rust/unit_test
+      - unit_test
       - deploy:
           requires:
             - unit_test
