@@ -32,7 +32,7 @@ jobs:
 
   deploy_darwin:
     macos:
-      - xcode: 12.5.1
+      xcode: 12.5.1
     steps:
       - checkout
       # needs ANACONDA_ORG_TOKEN env var
