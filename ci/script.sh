@@ -8,6 +8,8 @@ export PATH="$HOME/.cargo/bin:$PATH"
 eval `ssh-agent -s`
 ssh-add
 
+CARGO_NET_GIT_FETCH_WITH_CLI=true
+
 cargo test
 
 export PATH="$HOME/miniconda/bin:$PATH"
