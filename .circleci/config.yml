@@ -1,5 +1,8 @@
 version: 2.1
 
+orbs: 
+  rust: circleci/rust@1.6.0
+
 jobs:
   unit_test:
     docker:
