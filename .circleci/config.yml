@@ -1,43 +1,65 @@
 version: 2.1
 
+commands:
+  run_install_and_script:
+    steps:
+      - run: ./ci/install.sh
+      - run: ./ci/script.sh
+
 jobs:
   unit_test_linux:
     docker:
       - image: circleci/python:3.7
     steps:
       - checkout
-      - run: ./ci/install.sh
-      - run: ./ci/script.sh
+      - run_install_and_script 
 
-  unit_test_macos:
+  unit_test_darwin:
     macos:
       xcode: 12.5.1
     steps:
       - checkout
-      - run: ./ci/install.sh
-      - run: ./ci/script.sh
+      - run_install_and_script
 
-  deploy:
+  deploy_linux:
     docker:
       - image: circleci/python:3.7
     steps:
       - checkout
       # needs ANACONDA_ORG_TOKEN env var
-      - run: ./install.sh
-      - run: ./script.sh
+      - run_install_and_script
+      - run: ./deploy.sh
+
+  deploy_darwin:
+    macos
+      - xcode: 12.5.1
+    steps:
+      - checkout
+      # needs ANACONDA_ORG_TOKEN env var
+      - run_install_and_script
       - run: ./deploy.sh
 
 workflows:
   run_ci:
     jobs:
       - unit_test_linux
-      - unit_test_macos
-      - deploy:
+      - unit_test_darwin
+      - deploy_linux:
           requires:
             - unit_test_linux
-            - unit_test_macos
+            - unit_test_darwin
           filters:
             tags:
               only: /release_.*/
             branches:
               ignore: /.*/
+      - deploy_darwin:
+          requires:
+            - unit_test_linux
+            - unit_test_darwin
+          filters:
+            tags:
+              only: /release_.*/
+            branches:
+              ignore: /.*/
+
