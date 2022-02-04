@@ -17,6 +17,7 @@ ls $HOME/miniconda/lib/
 echo "here2"
 conda update -q conda
 ls $HOME/miniconda/lib/
+ln -s $HOME/miniconda/lib/libffi.7.dylib $HOME/miniconda/lib/libffi.6.dylib
 echo "here3"
 # Useful for debugging any issues with conda
 conda info -a
