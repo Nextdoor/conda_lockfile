@@ -22,7 +22,8 @@ ls $HOME/miniconda/lib/
 
 # `conda update -q conda` removes libffi.6.dylib and replaces it with libffi.7.dylib and libffi.8.dylib
 # libffi.6.dylib is required for `conda install`. https://github.com/conda/conda/issues/9038.
-ln -s $HOME/miniconda/lib/libffi.7.dylib $HOME/miniconda/lib/libffi.6.dylib
+#ln -s $HOME/miniconda/lib/libffi.7.dylib $HOME/miniconda/lib/libffi.6.dylib
+ln -s $HOME/miniconda/lib/libffi.so.8 $HOME/miniconda/lib/libffi.so.6
 
 # Useful for debugging any issues with conda
 conda info -a
