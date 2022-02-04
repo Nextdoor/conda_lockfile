@@ -25,7 +25,7 @@ jobs:
 workflows:
   run_ci:
     jobs:
-      - unit_test
+      - rust/unit_test
       - deploy:
           requires:
             - unit_test
