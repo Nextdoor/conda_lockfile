@@ -1,0 +1,33 @@
+jobs:
+  unit_test:
+    docker:
+      - image: circleci/python:3.7
+    steps:
+      - checkout
+      - ./ci/install.sh
+      - ./ci/script.sh
+
+  deploy:
+    docker:
+      - image: circleci/python:3.7
+    steps:
+      - checkout
+      # needs ANACONDA_ORG_TOKEN env var
+      - ./install.sh
+      - ./script.sh
+      - ./deploy.sh
+
+workflows:
+  version: 2
+
+  run_ci:
+    jobs:
+      - unit_test
+      - deploy:
+          requires:
+            - unit_test
+          filters:
+            tags:
+              only: /prod.*/
+            branches:
+              ignore: /.*/
