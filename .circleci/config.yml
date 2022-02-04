@@ -6,8 +6,8 @@ jobs:
       - image: circleci/python:3.7
     steps:
       - checkout
-      - ./ci/install.sh
-      - ./ci/script.sh
+      - run: ./ci/install.sh
+      - run: ./ci/script.sh
 
   deploy:
     docker:
@@ -15,9 +15,9 @@ jobs:
     steps:
       - checkout
       # needs ANACONDA_ORG_TOKEN env var
-      - ./install.sh
-      - ./script.sh
-      - ./deploy.sh
+      - run: ./install.sh
+      - run: ./script.sh
+      - run: ./deploy.sh
 
 workflows:
   run_ci:
@@ -28,6 +28,6 @@ workflows:
             - unit_test
           filters:
             tags:
-              only: /prod.*/
+              only: /release_.*/
             branches:
               ignore: /.*/
