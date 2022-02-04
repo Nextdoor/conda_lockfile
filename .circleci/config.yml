@@ -1,9 +1,17 @@
 version: 2.1
 
 jobs:
-  unit_test:
+  unit_test_linux:
     docker:
       - image: circleci/python:3.7
+    steps:
+      - checkout
+      - run: ./ci/install.sh
+      - run: ./ci/script.sh
+
+  unit_test_macos:
+    macos:
+      xcode: 12.5.1
     steps:
       - checkout
       - run: ./ci/install.sh
@@ -22,10 +30,12 @@ jobs:
 workflows:
   run_ci:
     jobs:
-      - unit_test
+      - unit_test_linux
+      - unit_test_macos
       - deploy:
           requires:
-            - unit_test
+            - unit_test_linux
+            - unit_test_macos
           filters:
             tags:
               only: /release_.*/
