@@ -31,7 +31,7 @@ jobs:
       - run: ./deploy.sh
 
   deploy_darwin:
-    macos
+    macos:
       - xcode: 12.5.1
     steps:
       - checkout
@@ -47,7 +47,6 @@ workflows:
       - deploy_linux:
           requires:
             - unit_test_linux
-            - unit_test_darwin
           filters:
             tags:
               only: /release_.*/
@@ -55,7 +54,6 @@ workflows:
               ignore: /.*/
       - deploy_darwin:
           requires:
-            - unit_test_linux
             - unit_test_darwin
           filters:
             tags:
