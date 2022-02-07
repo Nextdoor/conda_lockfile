@@ -42,8 +42,14 @@ jobs:
 workflows:
   run_ci:
     jobs:
-      - unit_test_linux
-      - unit_test_darwin
+      - unit_test_linux:
+          filters:
+            tags:
+              only: /release_.*/
+      - unit_test_darwin:
+          filters:
+            tags:
+              only: /release_.*/
       - deploy_linux:
           filters:
             tags:
