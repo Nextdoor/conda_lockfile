@@ -28,7 +28,7 @@ jobs:
       - checkout
       # needs ANACONDA_ORG_TOKEN env var
       - run_install_and_script
-      - run: ./deploy.sh
+      - run: ./ci/deploy.sh
 
   deploy_darwin:
     macos:
@@ -37,7 +37,7 @@ jobs:
       - checkout
       # needs ANACONDA_ORG_TOKEN env var
       - run_install_and_script
-      - run: ./deploy.sh
+      - run: ./ci/deploy.sh
 
 workflows:
   run_ci:
