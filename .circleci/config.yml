@@ -42,15 +42,25 @@ jobs:
 workflows:
   run_ci:
     jobs:
-      - unit_test_linux
-      - unit_test_darwin
+      - unit_test_linux:
+          filters:
+            tags:
+              only: /release_.*/
+      - unit_test_darwin:
+          filters:
+            tags:
+              only: /release_.*/
       - deploy_linux:
+          requires:
+            - unit_test_linux
           filters:
             tags:
               only: /release_.*/
             branches:
               ignore: /.*/
       - deploy_darwin:
+          requires:
+            - unit_test_darwin
           filters:
             tags:
               only: /release_.*/
