@@ -5,6 +5,9 @@ set -e
 curl https://sh.rustup.rs -sSf | sh -s -- -y
 export PATH="$HOME/.cargo/bin:$PATH"
 
+echo "[url \"https://github.com/rust-lang/crates.io-index\"]" >> ~/.gitconfig
+echo "        insteadOf = https://github.com/rust-lang/crates.io-index" >> ~/.gitconfig
+
 eval `ssh-agent -s`
 ssh-add
 
