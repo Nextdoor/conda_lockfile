@@ -21,6 +21,14 @@ jobs:
       - checkout
       - run_install_and_script
 
+  unit_test_arm64:
+    machine: 
+      image: 'ubuntu-2004:202101-01'
+    resource_class: arm.medium
+    steps:      
+      - checkout
+      - run_install_and_script
+
   deploy_linux:
     docker:
       - image: circleci/python:3.7
@@ -39,6 +47,16 @@ jobs:
       - run_install_and_script
       - run: ./ci/deploy.sh
 
+  deploy_arm64:
+    machine: 
+      image: 'ubuntu-2004:202101-01'
+    resource_class: arm.medium
+    steps:
+      - checkout
+      # needs ANACONDA_ORG_TOKEN env var
+      - run_install_and_script
+      - run: ./ci/deploy.sh
+
 workflows:
   run_ci:
     jobs:
@@ -47,6 +65,10 @@ workflows:
             tags:
               only: /release_.*/
       - unit_test_darwin:
+          filters:
+            tags:
+              only: /release_.*/
+      - unit_test_arm64:
           filters:
             tags:
               only: /release_.*/
@@ -66,4 +88,11 @@ workflows:
               only: /release_.*/
             branches:
               ignore: /.*/
-
+      - deploy_arm64:
+          requires:
+            - unit_test_arm64
+          filters:
+            tags:
+              only: /release_.*/
+            branches:
+              ignore: /.*/

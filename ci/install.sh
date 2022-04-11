@@ -2,10 +2,13 @@
 
 set -e
 
-if [[ "$(uname)" == "Darwin" ]]; then
+if [[ "$(uname)" == "Darwin" ]] && [[ "$(uname -m)" == "x86_64" ]]; then
     URL="https://repo.anaconda.com/miniconda/Miniconda3-py37_4.10.3-MacOSX-x86_64.sh"
     HOMEBREW_NO_AUTO_UPDATE=1 brew install wget
-else
+elif [[ "$(uname -m)" == "arm64" ]]; then
+      URL="https://repo.anaconda.com/miniconda/Miniconda3-py38_4.10.1-MacOSX-arm64.sh"
+      HOMEBREW_NO_AUTO_UPDATE=1 brew install wget
+else        
     URL="https://repo.anaconda.com/miniconda/Miniconda3-py37_4.10.3-Linux-x86_64.sh"
 fi
 wget $URL -O miniconda.sh;
