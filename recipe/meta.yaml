@@ -1,6 +1,6 @@
 package:
   name: conda-lockfile
-  version: "0.8"
+  version: "0.9"
 
 channels:
 - conda-forge
