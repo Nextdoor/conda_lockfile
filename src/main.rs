@@ -371,7 +371,7 @@ fn build_container() -> String {
     let image_name = "lock_file_maker".to_string();
     let dockerfile = interpolate_dockerfile();
     let mut docker_build = Command::new("docker")
-        .args(&["build", "-t", &image_name, "-"])
+        .args(&["buildx", "build", "-t", &image_name, "-"])
         .stdin(Stdio::piped())
         .spawn()
         .unwrap();
