@@ -143,8 +143,8 @@ fn get_app<'a, 'b>(default_platform: &'a str) -> App<'a, 'b> {
 }
 
 fn main() -> Result<()> {
-    let execution_platform = get_platform()?;
-    let app_m = get_app(&execution_platform).get_matches();
+    let execution_os = get_os()?;
+    let app_m = get_app(&execution_os).get_matches();
 
     let log_level = match app_m.occurrences_of("v") {
         0 => LogLevelFilter::Error,
@@ -170,24 +170,24 @@ fn handle_freeze(matches: &ArgMatches) -> Result<()> {
     info!("Freezing");
     let depfile_path = matches.value_of("depfile").unwrap();
 
-    let execution_platform = get_platform()?;
-    let target_platform = matches.value_of("platform").unwrap();
+    let execution_os = get_os()?;
+    let target_os = matches.value_of("platform").unwrap();
 
     let lockfile_path = match matches.value_of("lockfile") {
         Some(path) => path.to_string(),
-        None => format!("deps.{}.lock.yml", target_platform),
+        None => format!("deps.{}.lock.yml", target_os),
     };
-    if execution_platform == target_platform {
+    if execution_os == target_os {
         info!("Execution & target platform match");
-        return freeze_same_platform(&depfile_path, &lockfile_path);
+        return freeze_same_os(&depfile_path, &lockfile_path);
     }
 
-    match (execution_platform.as_str(), target_platform) {
+    match (execution_os.as_str(), target_os) {
         ("Darwin", "Linux") => freeze_linux_on_mac(&depfile_path, &lockfile_path),
         _ => {
             let msg = format!(
                 "Unable to target {} from {}",
-                target_platform, execution_platform
+                target_os, execution_os
             );
             Err(ioError::new(ioErrorKind::Other, msg).into())
         }
@@ -234,7 +234,7 @@ fn run_command(executable: &str, args: &[&str]) -> ioResult<Output> {
     }
 }
 
-fn freeze_same_platform(depfile_path: &str, lockfile_path: &str) -> Result<()> {
+fn freeze_same_os(depfile_path: &str, lockfile_path: &str) -> Result<()> {
     debug!("Freezing");
     let (env_name, env_hash) = read_env_name_and_hash(&depfile_path)?;
 
@@ -445,7 +445,7 @@ fn conda_prefix(name: &str) -> Result<PathBuf> {
     Ok(path)
 }
 
-fn get_platform() -> Result<String> {
+fn get_os() -> Result<String> {
     if cfg!(target_os = "linux") {
         Ok("Linux".to_string())
     } else if cfg!(target_os = "macos") {
@@ -472,7 +472,7 @@ fn handle_create(matches: &ArgMatches) -> Result<()> {
 
     let lockfile_path = match matches.value_of("lockfile") {
         Some(path) => path.to_string(),
-        None => match get_platform() {
+        None => match get_os() {
             Ok(platform) => format!("deps.{}.lock.yml", platform),
             Err(_) => "".to_string(),
         },
@@ -638,8 +638,8 @@ mod tests {
 
     #[test]
     fn freeze_defaults() {
-        let execution_platform = get_platform().unwrap();
-        let app = get_app(&execution_platform);
+        let execution_os = get_os().unwrap();
+        let app = get_app(&execution_os);
         let matches = app.get_matches_from(["conda-lockfile", "freeze"].iter());
         let (name, sub_matches) = matches.subcommand();
         let sub_matches = sub_matches.unwrap();
@@ -647,18 +647,18 @@ mod tests {
         assert_eq!(sub_matches.value_of("depfile").unwrap(), "deps.yml");
         assert_eq!(
             sub_matches.value_of("lockfile").unwrap(),
-            format!("deps.{}.lock.yml", execution_platform),
+            format!("deps.{}.lock.yml", execution_os),
         );
         assert_eq!(
             sub_matches.value_of("platform").unwrap(),
-            execution_platform
+            execution_os
         );
     }
 
     #[test]
     fn freeze_options() {
-        let execution_platform = get_platform().unwrap();
-        let app = get_app(&execution_platform);
+        let execution_os = get_os().unwrap();
+        let app = get_app(&execution_os);
         let matches = app.get_matches_from(
             [
                 "conda-lockfile",
@@ -683,9 +683,9 @@ mod tests {
     #[test]
     fn freeze_platform_lockfile() {
         // Make sure setting the platform changes the default lockfile
-        let execution_platform = get_platform().unwrap();
+        let execution_os = get_os().unwrap();
 
-        let app = get_app(&execution_platform);
+        let app = get_app(&execution_os);
         let matches =
             app.get_matches_from(["conda-lockfile", "freeze", "--platform", "Linux"].iter());
         let (name, sub_matches) = matches.subcommand();
@@ -697,7 +697,7 @@ mod tests {
             "deps.Linux.lock.yml"
         );
 
-        let app = get_app(&execution_platform);
+        let app = get_app(&execution_os);
         let matches =
             app.get_matches_from(["conda-lockfile", "freeze", "--platform", "Darwin"].iter());
         let (name, sub_matches) = matches.subcommand();
@@ -712,8 +712,8 @@ mod tests {
 
     #[test]
     fn checklogs_files() {
-        let execution_platform = get_platform().unwrap();
-        let app = get_app(&execution_platform);
+        let execution_os = get_os().unwrap();
+        let app = get_app(&execution_os);
         let matches = app.get_matches_from(["conda-lockfile", "checklocks", "foo", "bar"].iter());
         let (name, sub_matches) = matches.subcommand();
         let sub_matches = sub_matches.unwrap();
