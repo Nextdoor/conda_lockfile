@@ -255,7 +255,7 @@ fn freeze_same_platform(depfile_path: &str, lockfile_path: &str) -> Result<()> {
             &depfile_path,
             "-n",
             &tmp_name,
-            "--force",
+            "--yes",
         ],
     )?;
     info!("Made new env new env");
@@ -488,7 +488,7 @@ fn handle_create(matches: &ArgMatches) -> Result<()> {
         &[
             "env",
             "create",
-            "--force",
+            "--yes",
             "-q",
             "--json",
             "--name",
