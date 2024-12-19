@@ -9,7 +9,7 @@ commands:
 jobs:
   unit_test_linux:
     docker:
-      - image: circleci/python:3.12
+      - image: cimg/python:3.12
     steps:
       - checkout
       - run_install_and_script 
@@ -23,7 +23,7 @@ jobs:
 
   deploy_linux:
     docker:
-      - image: circleci/python:3.12
+      - image: cimg/python:3.12
     steps:
       - checkout
       # needs ANACONDA_ORG_TOKEN env var
